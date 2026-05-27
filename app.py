@@ -20,7 +20,12 @@ DB_PATH = os.getenv("ALTITUDE_DB_PATH", os.path.join(BASE_DIR, "altitude.db"))
 UPLOAD_FOLDER = os.getenv("ALTITUDE_UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
