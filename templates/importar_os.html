@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}ALTIDUDE - Gestão de O.S{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 10px 0; font-size:22px;">GESTÃO DE O.S</h1>
+
+{% if is_admin %}
+<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-bottom:10px;">
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px;">
+    <h3 style="margin:0 0 8px 0;font-size:15px;">Importar O.S. (XLS/XLSX)</h3>
+    <form method="POST" enctype="multipart/form-data">
+      <input type="file" name="arquivo" required style="display:block;width:100%;margin-bottom:8px;font-size:13px;">
+      <button type="submit" style="padding:8px 12px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:13px;">IMPORTAR PLANILHA</button>
+    </form>
+  </div>
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
+    <h3 style="margin:0 0 8px 0;font-size:15px;">Novo Piloto</h3>
+    <form method="POST" action="/admin/pilotos">
+      <input type="text" name="nome" placeholder="Nome do piloto" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+      <input type="text" name="usuario" placeholder="Usuário" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+      <input type="password" name="senha" placeholder="Senha" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+      <button type="submit" style="padding:8px 12px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;">CADASTRAR PILOTO</button>
+    </form>
+  </div>
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
+    <h3 style="margin:0 0 8px 0;font-size:15px;">Novo Auxiliar</h3>
+    <form method="POST" action="/admin/auxiliares">
+      <input type="text" name="nome" placeholder="Nome do auxiliar" required style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+      <button type="submit" style="padding:8px 12px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;">CADASTRAR AUXILIAR</button>
+    </form>
+  </div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+  <a href="/admin/relatorios" style="display:inline-block;padding:8px 12px;background:#1d4ed8;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Relatórios</a>
+  <a href="/admin/exportar_excel" style="display:inline-block;padding:8px 12px;background:#0f766e;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Exportar Excel</a>
+</div>
+<table style="font-size:13px; border-collapse:collapse; width:100%;">
+<thead>
+<tr>
+<th style="padding:8px 6px; text-align:left;">OS</th>
+<th style="padding:8px 6px; text-align:left;">OPERAÇÃO</th>
+<th style="padding:8px 6px; text-align:left;">DATA O.S</th>
+<th style="padding:8px 6px; text-align:left;">FAZENDA</th>
+<th style="padding:8px 6px; text-align:left;">SETOR</th>
+<th style="padding:8px 6px; text-align:left;">UNIDADE</th>
+<th style="padding:8px 6px; text-align:left;">ÁREA O.S</th>
+</tr>
+</thead>
+<tbody>
+{% for os in dados_os %}
+<tr>
+<td style="padding:8px 6px;">{{ os.os }}</td>
+<td style="padding:8px 6px;">{{ os.operacao }}</td>
+<td style="padding:8px 6px;">{{ os.data_os }}</td>
+<td style="padding:8px 6px;">{{ os.fazenda }}</td>
+<td style="padding:8px 6px;">{{ os.setor }}</td>
+<td style="padding:8px 6px;">{{ os.unidade or '' }}</td>
+<td style="padding:8px 6px;">{{ os.area_os }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<form method="POST" enctype="multipart/form-data">
+  <input type="file" name="arquivo" required>
+  <button type="submit">IMPORTAR PLANILHA</button>
+</form>
+
+<table style="font-size:13px; border-collapse:collapse; width:100%;">
+<thead>
+<tr>
+<th style="padding:8px 6px; text-align:left;">OS</th>
+<th style="padding:8px 6px; text-align:left;">OPERAÇÃO</th>
+<th style="padding:8px 6px; text-align:left;">DATA O.S</th>
+<th style="padding:8px 6px; text-align:left;">FAZENDA</th>
+<th style="padding:8px 6px; text-align:left;">SETOR</th>
+<th style="padding:8px 6px; text-align:left;">UNIDADE</th>
+<th style="padding:8px 6px; text-align:left;">ÁREA O.S</th>
+</tr>
+</thead>
+<tbody>
+{% for os in dados_os %}
+<tr>
+<td style="padding:8px 6px;">{{ os.os }}</td>
+<td style="padding:8px 6px;">{{ os.operacao }}</td>
+<td style="padding:8px 6px;">{{ os.data_os }}</td>
+<td style="padding:8px 6px;">{{ os.fazenda }}</td>
+<td style="padding:8px 6px;">{{ os.setor }}</td>
+<td style="padding:8px 6px;">{{ os.unidade or '' }}</td>
+<td style="padding:8px 6px;">{{ os.area_os }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}

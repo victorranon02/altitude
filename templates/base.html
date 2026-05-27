@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ALTIDUDE{% endblock %}</title>
+<style>
+body { font-family:Arial, sans-serif; background:#f4f6f9; margin:0; padding:0; }
+.page { max-width:1100px; margin:auto; padding:20px; }
+.navbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:16px; background:#1d4ed8; color:white; }
+.navbar a { color:white; text-decoration:none; padding:10px 14px; border-radius:8px; background:rgba(255,255,255,0.1); }
+.navbar a:hover { background:rgba(255,255,255,0.2); }
+.navbar .brand { font-weight:700; margin-right:auto; }
+.content { background:white; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); padding:24px; margin-top:20px; }
+footer { text-align:center; color:#666; font-size:13px; margin-top:18px; }
+button, input, select, textarea { font-family:inherit; }
+.status-pill { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; }
+.status-finalizado { background:#dcfce7; color:#166534; }
+.status-atingida { background:#dbeafe; color:#1d4ed8; }
+.status-andamento { background:#fef3c7; color:#92400e; }
+.status-aguardando { background:#f3f4f6; color:#374151; }
+</style>
+</head>
+<body>
+<div class="navbar">
+  <div class="brand">ALTIDUDE</div>
+  {% if session.get('perfil') == 'ADMINISTRADOR' %}
+    <a href="/admin">Admin</a>
+    <a href="/admin/relatorios">Relatórios</a>
+    <a href="/auxiliares">Auxiliares</a>
+  {% elif session.get('perfil') == 'PILOTO' %}
+    <a href="/piloto">Piloto</a>
+  {% else %}
+    <a href="/">Login</a>
+  {% endif %}
+  {% if session.get('piloto_id') %}
+    <a href="/logout">Sair</a>
+  {% endif %}
+</div>
+<div class="page content">
+  {% block content %}{% endblock %}
+</div>
+<footer>Altitud e Projeto de gestão para pilotos</footer>
+</body>
+</html>

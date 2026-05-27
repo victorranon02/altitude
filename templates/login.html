@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div style="max-width:400px;margin:auto;">
+  <h1 style="text-align:center;color:#1d4ed8;">ALTIDUDE MOBILE</h1>
+  {% if erro %}
+    <p style="color:red;text-align:center;">{{ erro }}</p>
+  {% endif %}
+  <form method="POST" action="/login" style="display:flex;flex-direction:column;gap:12px;">
+    <select name="perfil" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
+      <option value="">Escolha o ambiente</option>
+      <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+      <option value="PILOTO">PILOTO</option>
+    </select>
+    <input type="text" name="usuario" placeholder="Usuário" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
+    <input type="password" name="senha" placeholder="Senha" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
+    <button type="submit" style="padding:14px;background:#1d4ed8;color:white;border:none;border-radius:10px;">ENTRAR</button>
+  </form>
+  <p style="text-align:center;color:#777;margin-top:18px;font-size:13px;">Desenvolvido por: VICTOR RANON</p>
+</div>
+{% endblock %}

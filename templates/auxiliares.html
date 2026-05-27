@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Auxiliares</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f6f9;
+    padding:40px;
+}
+
+.container{
+    background:white;
+    max-width:800px;
+    margin:auto;
+    padding:40px;
+    border-radius:16px;
+}
+
+.menu{
+    display:flex;
+    gap:10px;
+    margin-bottom:30px;
+}
+
+.menu a{
+    background:#1d4ed8;
+    color:white;
+    padding:12px 20px;
+    text-decoration:none;
+    border-radius:8px;
+}
+
+input{
+    width:100%;
+    padding:14px;
+    margin-bottom:20px;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    background:#1d4ed8;
+    border:none;
+    color:white;
+    border-radius:8px;
+}
+
+ul{
+    margin-top:30px;
+    list-style:none;
+    padding:0;
+}
+
+li{
+    background:#f7f9fc;
+    padding:14px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>AUXILIARES</h1>
+
+<div class="menu">
+    <a href="/">O.S</a>
+    <a href="/piloto">Pilotos</a>
+</div>
+
+<form method="POST">
+
+<input
+type="text"
+name="nome"
+placeholder="Nome do auxiliar"
+required>
+
+<button type="submit">
+SALVAR AUXILIAR
+</button>
+
+</form>
+
+<ul>
+
+{% for auxiliar in auxiliares %}
+<li>{{ auxiliar.nome }}</li>
+{% endfor %}
+
+</ul>
+
+<p style="text-align:center;color:#777;">
+Desenvolvido por: VICTOR RANON
+</p>
+
+</div>
+
+</body>
+</html>

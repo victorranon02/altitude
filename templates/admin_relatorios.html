@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios Admin{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+  <div>
+    <h2 style="margin:0 0 6px 0;">RELATÓRIOS DOS PILOTOS</h2>
+    <p style="margin:0;color:#4b5563;">Visão consolidada dos apontamentos com dados da O.S. importada.</p>
+  </div>
+  <a href="/admin/exportar_excel" style="display:inline-block;padding:10px 14px;background:#1d4ed8;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Exportar Excel</a>
+</div>
+<div style="margin-top:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;color:#1e3a8a;">Resumo rápido: OS, operação, fazenda, setor e apontamentos dos pilotos.</div>
+<table style="width:100%;border-collapse:collapse;margin-top:18px;font-size:14px;">
+  <tr style="background:#1d4ed8;color:white;">
+    <th style="padding:12px;text-align:left;">OS</th>
+    <th style="padding:12px;">Operação</th>
+    <th style="padding:12px;">Fazenda</th>
+    <th style="padding:12px;">Setor</th>
+    <th style="padding:12px;">Unidade</th>
+    <th style="padding:12px;">Piloto</th>
+    <th style="padding:12px;">Auxiliar</th>
+    <th style="padding:12px;">Área</th>
+    <th style="padding:12px;">Status</th>
+    <th style="padding:12px;">Observação</th>
+    <th style="padding:12px;">Data</th>
+  </tr>
+  {% for r in dados %}
+  <tr style="border-bottom:1px solid #eee;">
+    <td style="padding:12px;font-weight:700;">{{ r.os }}</td>
+    <td style="padding:12px;">{{ r.operacao }}</td>
+    <td style="padding:12px;">{{ r.fazenda }}</td>
+    <td style="padding:12px;">{{ r.setor }}</td>
+    <td style="padding:12px;">{{ r.unidade }}</td>
+    <td style="padding:12px;">{{ r.piloto }}</td>
+    <td style="padding:12px;">{{ r.auxiliar }}</td>
+    <td style="padding:12px;">{{ r.area }}</td>
+    <td style="padding:12px;">{{ r.status }}</td>
+    <td style="padding:12px;">{{ r.observacao }}</td>
+    <td style="padding:12px;">{{ r.data }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

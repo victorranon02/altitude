@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}O.S {{ os.os }}{% endblock %}
+
+{% block content %}
+<div style="display:grid;gap:10px;">
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+    <h2 style="margin:0 0 6px 0;font-size:18px;">O.S {{ os.os }}</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:#374151;">
+      <span><strong>Fazenda:</strong> {{ os.fazenda }}</span>
+      <span><strong>Setor:</strong> {{ os.setor }}</span>
+      <span><strong>Área estimada:</strong> {{ os.area_os }} ha</span>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+    <h3 style="margin:0 0 8px 0;font-size:15px;">Novo Relato</h3>
+    <form method="POST" style="display:grid;gap:8px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+        <select name="auxiliar" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+          <option value="">Selecione auxiliar</option>
+          {% for a in auxiliares %}
+            <option value="{{ a.nome }}">{{ a.nome }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" step="0.01" name="area" placeholder="Área feita agora" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+      </div>
+      <textarea name="observacao" placeholder="Observação" rows="3" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#065f46;">
+        <input type="checkbox" name="finalizar_os" {% if os.finalizado %}checked{% endif %}> FINALIZAR O.S
+      </label>
+      <button type="submit" style="padding:8px 12px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;">SALVAR RELATO</button>
+    </form>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+    <h3 style="margin:0 0 8px 0;font-size:15px;">Relatos da O.S.</h3>
+    {% for h in historico %}
+    <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:8px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 12px;font-size:13px;color:#111827;">
+        <span><strong>Piloto:</strong> {{ h.piloto_nome }}</span>
+        <span><strong>Auxiliar:</strong> {{ h.auxiliar }}</span>
+        <span><strong>Área:</strong> {{ h.area }} ha</span>
+      </div>
+      <p style="margin:6px 0 0 0;font-size:13px;color:#374151;">{{ h.observacao }}</p>
+      <p style="margin:6px 0 0 0;font-size:12px;color:#6b7280;">{{ h.data_hora }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
