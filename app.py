@@ -211,6 +211,29 @@ def excluir_os(os_id):
 
     return redirect("/admin")
 
+@app.route("/admin/pilotos/<int:piloto_id>/excluir", methods=["POST"])
+def excluir_piloto(piloto_id):
+    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
+        return redirect("/login")
+
+    piloto = Piloto.query.get_or_404(piloto_id)
+    ExecucaoOS.query.filter_by(piloto_id=piloto.id).delete()
+    db.session.delete(piloto)
+    db.session.commit()
+
+    return redirect("/admin")
+
+@app.route("/admin/auxiliares/<int:auxiliar_id>/excluir", methods=["POST"])
+def excluir_auxiliar(auxiliar_id):
+    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
+        return redirect("/login")
+
+    auxiliar = Auxiliar.query.get_or_404(auxiliar_id)
+    db.session.delete(auxiliar)
+    db.session.commit()
+
+    return redirect("/admin")
+
 # ==================================
 # LOGIN
 # ==================================
