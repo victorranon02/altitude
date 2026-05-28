@@ -13,7 +13,7 @@ app = Flask(__name__)
 # CONFIGURAÇÕES
 # ==================================
 
-app.secret_key = os.getenv("ALTITUDE_SECRET_KEY", "altitude_secret_123")
+app.secret_key = os.getenv("ALTITUDE_SECRET_KEY", "Altitude2@24")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.getenv("ALTITUDE_DB_PATH", os.path.join(BASE_DIR, "altitude.db"))
