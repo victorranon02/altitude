@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from openpyxl import Workbook, load_workbook
 from sqlalchemy import inspect, text
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from io import BytesIO
 import os
@@ -267,13 +267,71 @@ def login():
 # LISTA O.S (MOBILE)
 # ==================================
 
-@app.route("/piloto")
+@app.route("/piloto", methods=["GET", "POST"])
 def piloto():
 
     piloto_id = session.get("piloto_id")
 
     if not piloto_id or session.get("perfil") != "PILOTO":
         return redirect("/login")
+
+    form_error = None
+    form_success = None
+    new_os_data = {
+        "os": "",
+        "operacao": "",
+        "data_os": "",
+        "fazenda": "",
+        "setor": "",
+        "area_os": "",
+        "unidade": "",
+    }
+
+    if request.method == "POST":
+        os_codigo = (request.form.get("os") or "").strip()
+        operacao = (request.form.get("operacao") or "").strip()
+        data_os = (request.form.get("data_os") or "").strip()
+        fazenda = (request.form.get("fazenda") or "").strip()
+        setor = (request.form.get("setor") or "").strip()
+        area_os_val = (request.form.get("area_os") or "").strip()
+        unidade = (request.form.get("unidade") or "").strip()
+
+        new_os_data.update({
+            "os": os_codigo,
+            "operacao": operacao,
+            "data_os": data_os,
+            "fazenda": fazenda,
+            "setor": setor,
+            "area_os": area_os_val,
+            "unidade": unidade,
+        })
+
+        if not all([os_codigo, operacao, data_os, fazenda, setor, area_os_val, unidade]):
+            form_error = "Preencha todos os campos para cadastrar a O.S."
+        else:
+            try:
+                area_os_num = float(area_os_val.replace(",", "."))
+            except ValueError:
+                area_os_num = None
+
+            if area_os_num is None:
+                form_error = "Área O.S. deve ser um número válido."
+            elif OrdemServico.query.filter_by(os=os_codigo).first():
+                form_error = "Já existe uma O.S. com esse código."
+            else:
+                novo_os = OrdemServico(
+                    os=os_codigo,
+                    operacao=operacao,
+                    data_os=data_os,
+                    fazenda=fazenda,
+                    setor=setor,
+                    unidade=unidade,
+                    area_os=area_os_num,
+                )
+                db.session.add(novo_os)
+                db.session.commit()
+                form_success = "O.S. cadastrada com sucesso."
+                new_os_data = {key: "" for key in new_os_data}
 
     piloto = Piloto.query.get(piloto_id)
     lista_os = OrdemServico.query.order_by(OrdemServico.os).all()
@@ -295,6 +353,9 @@ def piloto():
         "piloto_mobile.html",
         piloto=piloto,
         lista_os=lista_os,
+        form_error=form_error,
+        form_success=form_success,
+        new_os_data=new_os_data,
     )
 
 # ==================================
@@ -362,16 +423,47 @@ def admin_relatorios():
     if not piloto_id:
         return redirect("/login")
 
-    dados_raw = ExecucaoOS.query.order_by(
-        ExecucaoOS.data_hora.desc()
-    ).all()
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    start_dt = None
+    end_dt = None
+
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            start_dt = None
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            end_dt = None
+
+    query = ExecucaoOS.query
+    if start_dt:
+        query = query.filter(ExecucaoOS.data_hora >= start_dt)
+    if end_dt:
+        query = query.filter(ExecucaoOS.data_hora < end_dt)
+
+    dados_raw = query.order_by(ExecucaoOS.data_hora.desc()).all()
 
     dados = []
+    total_area = 0.0
+    summary_pilotos = {}
+    summary_auxiliares = {}
 
     for r in dados_raw:
-
         os_item = OrdemServico.query.get(r.os_id)
         piloto = Piloto.query.get(r.piloto_id)
+
+        piloto_nome = piloto.nome if piloto else "N/A"
+        auxiliar_nome = r.auxiliar or "N/A"
+        area = float(r.area or 0)
+        total_area += area
+
+        summary_pilotos[piloto_nome] = summary_pilotos.get(piloto_nome, 0.0) + area
+        summary_auxiliares[auxiliar_nome] = summary_auxiliares.get(auxiliar_nome, 0.0) + area
 
         dados.append({
             "os": os_item.os if os_item else "N/A",
@@ -379,15 +471,27 @@ def admin_relatorios():
             "fazenda": os_item.fazenda if os_item else "",
             "setor": os_item.setor if os_item else "",
             "unidade": os_item.unidade if os_item else "",
-            "piloto": piloto.nome if piloto else "N/A",
-            "auxiliar": r.auxiliar,
-            "area": r.area,
+            "piloto": piloto_nome,
+            "auxiliar": auxiliar_nome,
+            "area": area,
             "observacao": r.observacao,
             "status": os_item.status_label() if os_item else "N/A",
             "data": format_brasilia(r.data_hora)
         })
 
-    return render_template("admin_relatorios.html", dados=dados)
+    summary_pilotos = sorted(summary_pilotos.items(), key=lambda item: item[1], reverse=True)
+    summary_auxiliares = sorted(summary_auxiliares.items(), key=lambda item: item[1], reverse=True)
+
+    return render_template(
+        "admin_relatorios.html",
+        dados=dados,
+        total_area=total_area,
+        total_records=len(dados_raw),
+        summary_pilotos=summary_pilotos,
+        summary_auxiliares=summary_auxiliares,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 def format_brasilia(value):
@@ -398,13 +502,73 @@ def format_brasilia(value):
     return value.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
 
 
+@app.route("/admin/exportar_os")
+def exportar_os():
+    piloto_id = session.get("piloto_id")
+    if not piloto_id:
+        return redirect("/login")
+
+    registros = OrdemServico.query.order_by(OrdemServico.os).all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "OS"
+    ws.append(["OS", "Operação", "Data O.S", "Fazenda", "Setor", "Unidade", "Área O.S", "Finalizado"])
+
+    for os_item in registros:
+        ws.append([
+            os_item.os,
+            os_item.operacao or "",
+            os_item.data_os or "",
+            os_item.fazenda or "",
+            os_item.setor or "",
+            os_item.unidade or "",
+            os_item.area_os if os_item.area_os is not None else "",
+            "SIM" if os_item.finalizado else "NÃO",
+        ])
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="os_altitude.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
 @app.route("/admin/exportar_excel")
 def exportar_excel():
     piloto_id = session.get("piloto_id")
     if not piloto_id:
         return redirect("/login")
 
-    dados_raw = ExecucaoOS.query.order_by(ExecucaoOS.data_hora.desc()).all()
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    start_dt = None
+    end_dt = None
+
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            start_dt = None
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            end_dt = None
+
+    query = ExecucaoOS.query
+    if start_dt:
+        query = query.filter(ExecucaoOS.data_hora >= start_dt)
+    if end_dt:
+        query = query.filter(ExecucaoOS.data_hora < end_dt)
+
+    dados_raw = query.order_by(ExecucaoOS.data_hora.desc()).all()
 
     wb = Workbook()
     ws = wb.active
@@ -467,23 +631,6 @@ def criar_auxiliar_admin():
         db.session.commit()
 
     return redirect("/admin")
-
-
-@app.route("/auxiliares", methods=["GET", "POST"])
-def auxiliares():
-    piloto_id = session.get("piloto_id")
-    if not piloto_id:
-        return redirect("/login")
-
-    if request.method == "POST":
-        nome = request.form.get("nome")
-        if nome and not Auxiliar.query.filter_by(nome=nome.strip()).first():
-            auxiliar = Auxiliar(nome=nome.strip())
-            db.session.add(auxiliar)
-            db.session.commit()
-
-    auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
-    return render_template("auxiliares.html", auxiliares=auxiliares)
 
 # ==================================
 # LOGOUT

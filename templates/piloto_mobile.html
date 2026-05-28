@@ -3,9 +3,54 @@
 {% block title %}Piloto Mobile{% endblock %}
 
 {% block content %}
-<div style="text-align:center; margin-bottom:14px;">
-  <h2 style="margin-bottom:6px;">Olá {{ piloto.nome }}</h2>
-  <p style="margin:0;color:#4b5563;">Selecione uma O.S. para abrir e relatar.</p>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+  <div>
+    <h2 style="margin-bottom:6px;">Olá {{ piloto.nome }}</h2>
+    <p style="margin:0;color:#4b5563;">Selecione uma O.S. para abrir e relatar.</p>
+  </div>
+  <button id="openNewOsBtn" type="button" style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Cadastrar nova O.S</button>
+</div>
+
+<div id="newOsForm" style="display:{{ 'block' if form_error or form_success else 'none' }};margin-bottom:18px;background:#fff;border:1px solid #d1d5db;border-radius:16px;box-shadow:0 16px 32px rgba(15,23,42,0.08);padding:18px;">
+  {% if form_error %}
+  <div style="margin-bottom:12px;padding:12px;border-radius:10px;background:#fee2e2;color:#991b1b;">{{ form_error }}</div>
+  {% endif %}
+  {% if form_success %}
+  <div style="margin-bottom:12px;padding:12px;border-radius:10px;background:#dcfce7;color:#166534;">{{ form_success }}</div>
+  {% endif %}
+  <form method="POST" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      OS
+      <input type="text" name="os" value="{{ new_os_data.os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Operação
+      <input type="text" name="operacao" value="{{ new_os_data.operacao }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Data O.S
+      <input type="date" name="data_os" value="{{ new_os_data.data_os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Fazenda
+      <input type="text" name="fazenda" value="{{ new_os_data.fazenda }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Setor
+      <input type="text" name="setor" value="{{ new_os_data.setor }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Área O.S
+      <input type="number" step="0.01" name="area_os" value="{{ new_os_data.area_os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+      Unidade
+      <input type="text" name="unidade" value="{{ new_os_data.unidade }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
+    </label>
+    <div style="display:flex;align-items:flex-end;">
+      <button type="submit" style="width:100%;padding:12px 14px;background:#10b981;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Salvar O.S</button>
+    </div>
+  </form>
 </div>
 
 <div style="margin-bottom:14px; display:flex; align-items:center; gap:10px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px;">
@@ -46,6 +91,14 @@
         const text = (card.getAttribute('data-search') || '').toLowerCase();
         card.style.display = text.includes(query) ? 'block' : 'none';
       });
+    });
+  }
+
+  const openNewOsBtn = document.getElementById('openNewOsBtn');
+  const newOsForm = document.getElementById('newOsForm');
+  if (openNewOsBtn && newOsForm) {
+    openNewOsBtn.addEventListener('click', () => {
+      newOsForm.style.display = newOsForm.style.display === 'none' ? 'block' : 'none';
     });
   }
 </script>
