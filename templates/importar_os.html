@@ -31,6 +31,31 @@
     </form>
   </div>
 </div>
+<div style="display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin-bottom:18px;">
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+    <h3 style="margin:0 0 10px 0;font-size:15px;">Pilotos cadastrados</h3>
+    <ul style="list-style:none;margin:0;padding:0;font-size:13px;">
+      {% for piloto in pilotos %}
+      <li style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">
+        <strong>{{ piloto.nome }}</strong><br>
+        <span style="color:#4b5563;">{{ piloto.usuario }} • {{ piloto.perfil }}</span>
+      </li>
+      {% else %}
+      <li style="padding:8px 10px;color:#6b7280;">Nenhum piloto cadastrado.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+    <h3 style="margin:0 0 10px 0;font-size:15px;">Auxiliares cadastrados</h3>
+    <ul style="list-style:none;margin:0;padding:0;font-size:13px;">
+      {% for auxiliar in auxiliares %}
+      <li style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">{{ auxiliar.nome }}</li>
+      {% else %}
+      <li style="padding:8px 10px;color:#6b7280;">Nenhum auxiliar cadastrado.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
   <a href="/admin/relatorios" style="display:inline-block;padding:8px 12px;background:#1d4ed8;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Relatórios</a>
   <a href="/admin/exportar_excel" style="display:inline-block;padding:8px 12px;background:#0f766e;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Exportar Excel</a>
@@ -45,6 +70,7 @@
 <th style="padding:8px 6px; text-align:left;">SETOR</th>
 <th style="padding:8px 6px; text-align:left;">UNIDADE</th>
 <th style="padding:8px 6px; text-align:left;">ÁREA O.S</th>
+<th style="padding:8px 6px; text-align:left;">Ações</th>
 </tr>
 </thead>
 <tbody>
@@ -57,6 +83,11 @@
 <td style="padding:8px 6px;">{{ os.setor }}</td>
 <td style="padding:8px 6px;">{{ os.unidade or '' }}</td>
 <td style="padding:8px 6px;">{{ os.area_os }}</td>
+<td style="padding:8px 6px;">
+  <form method="POST" action="/admin/os/{{ os.id }}/excluir" onsubmit="return confirm('Deseja excluir esta O.S. e todos os relatos relacionados?');">
+    <button type="submit" style="padding:6px 10px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Excluir</button>
+  </form>
+</td>
 </tr>
 {% endfor %}
 </tbody>

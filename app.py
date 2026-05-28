@@ -199,6 +199,18 @@ def importar_os():
         auxiliares=auxiliares,
     )
 
+@app.route("/admin/os/<int:os_id>/excluir", methods=["POST"])
+def excluir_os(os_id):
+    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
+        return redirect("/login")
+
+    os_item = OrdemServico.query.get_or_404(os_id)
+    ExecucaoOS.query.filter_by(os_id=os_item.id).delete()
+    db.session.delete(os_item)
+    db.session.commit()
+
+    return redirect("/admin")
+
 # ==================================
 # LOGIN
 # ==================================
