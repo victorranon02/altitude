@@ -217,6 +217,9 @@ def excluir_piloto(piloto_id):
         return redirect("/login")
 
     piloto = Piloto.query.get_or_404(piloto_id)
+    if piloto.perfil == "ADMINISTRADOR":
+        return redirect("/admin")
+
     ExecucaoOS.query.filter_by(piloto_id=piloto.id).delete()
     db.session.delete(piloto)
     db.session.commit()

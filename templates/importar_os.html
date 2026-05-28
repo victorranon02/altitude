@@ -41,9 +41,13 @@
           <strong>{{ piloto.nome }}</strong><br>
           <span style="color:#4b5563;">{{ piloto.usuario }} • {{ piloto.perfil }}</span>
         </div>
+        {% if piloto.perfil != 'ADMINISTRADOR' %}
         <form method="POST" action="/admin/pilotos/{{ piloto.id }}/excluir" onsubmit="return confirm('Deseja excluir este piloto e seus relatos?');">
           <button type="submit" style="padding:6px 10px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Excluir</button>
         </form>
+        {% else %}
+        <span style="padding:6px 10px;border-radius:8px;background:#e2e8f0;color:#475569;font-size:12px;">Administrador</span>
+        {% endif %}
       </li>
       {% else %}
       <li style="padding:8px 10px;color:#6b7280;">Nenhum piloto cadastrado.</li>
