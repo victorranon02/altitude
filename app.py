@@ -187,7 +187,29 @@ def importar_os():
             except Exception:
                 db.session.rollback()
 
-    dados_os = OrdemServico.query.order_by(OrdemServico.os).all()
+    # Filtro por status
+    status_filter = request.args.get("status", "").strip()
+    
+    todos_os = OrdemServico.query.order_by(OrdemServico.os).all()
+    
+    # Adiciona dados de status a cada O.S
+    for os_item in todos_os:
+        os_item.total_relatado = os_item.total_area_relatada()
+        os_item.status = os_item.status_label()
+        os_item.icon = os_item.status_icon()
+    
+    # Filtra por status se especificado
+    if status_filter:
+        dados_os = [os for os in todos_os if os.status == status_filter]
+    else:
+        dados_os = todos_os
+    
+    # Contagem por status
+    status_counts = {}
+    for os_item in todos_os:
+        status = os_item.status
+        status_counts[status] = status_counts.get(status, 0) + 1
+    
     pilotos = Piloto.query.order_by(Piloto.nome).all()
     auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
 
@@ -197,6 +219,8 @@ def importar_os():
         is_admin=True,
         pilotos=pilotos,
         auxiliares=auxiliares,
+        status_filter=status_filter,
+        status_counts=status_counts,
     )
 
 @app.route("/admin/os/<int:os_id>/excluir", methods=["POST"])
@@ -466,7 +490,9 @@ def admin_relatorios():
         summary_auxiliares[auxiliar_nome] = summary_auxiliares.get(auxiliar_nome, 0.0) + area
 
         dados.append({
+            "id": r.id,
             "os": os_item.os if os_item else "N/A",
+            "os_id": r.os_id,
             "operacao": os_item.operacao if os_item else "",
             "fazenda": os_item.fazenda if os_item else "",
             "setor": os_item.setor if os_item else "",
@@ -500,6 +526,51 @@ def format_brasilia(value):
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+
+
+@app.route("/admin/apontamento/<int:apontamento_id>/editar", methods=["GET", "POST"])
+def editar_apontamento(apontamento_id):
+    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
+        return redirect("/login")
+
+    apontamento = ExecucaoOS.query.get_or_404(apontamento_id)
+    os_item = OrdemServico.query.get(apontamento.os_id)
+    auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
+
+    if request.method == "POST":
+        auxiliar = request.form.get("auxiliar")
+        area = request.form.get("area")
+        observacao = request.form.get("observacao")
+
+        if auxiliar and area:
+            try:
+                apontamento.auxiliar = auxiliar.strip()
+                apontamento.area = float(area)
+                apontamento.observacao = observacao or ""
+                db.session.commit()
+                return redirect("/admin/relatorios")
+            except (ValueError, TypeError):
+                pass
+
+    return render_template(
+        "editar_apontamento.html",
+        apontamento=apontamento,
+        os=os_item,
+        auxiliares=auxiliares
+    )
+
+
+@app.route("/admin/apontamento/<int:apontamento_id>/excluir", methods=["POST"])
+def excluir_apontamento(apontamento_id):
+    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
+        return redirect("/login")
+
+    apontamento = ExecucaoOS.query.get_or_404(apontamento_id)
+    db.session.delete(apontamento)
+    db.session.commit()
+
+    return redirect("/admin/relatorios")
+
 
 
 @app.route("/admin/exportar_os")

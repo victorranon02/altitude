@@ -75,38 +75,74 @@
   <a href="/admin/exportar_excel" style="display:inline-block;padding:8px 12px;background:#0f766e;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Exportar Relatórios</a>
   <a href="/admin/exportar_os" style="display:inline-block;padding:8px 12px;background:#047857;color:white;text-decoration:none;border-radius:8px;font-size:13px;">Exportar O.S.</a>
 </div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+  <span style="font-weight:600;color:#475569;">Filtrar por status:</span>
+  <a href="/admin" style="padding:6px 12px;background:{% if not status_filter %}#2563eb{% else %}#e2e8f0{% endif %};color:{% if not status_filter %}white{% else %}#1f2937{% endif %};text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">
+    Todos ({{ status_counts|length }})
+  </a>
+  {% if status_counts.get('AGUARDANDO', 0) > 0 %}
+  <a href="/admin?status=AGUARDANDO" style="padding:6px 12px;background:{% if status_filter == 'AGUARDANDO' %}#6b7280{% else %}#e5e7eb{% endif %};color:{% if status_filter == 'AGUARDANDO' %}white{% else %}#1f2937{% endif %};text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">
+    ⚪ Aguardando ({{ status_counts.get('AGUARDANDO', 0) }})
+  </a>
+  {% endif %}
+  {% if status_counts.get('EM ANDAMENTO', 0) > 0 %}
+  <a href="/admin?status=EM ANDAMENTO" style="padding:6px 12px;background:{% if status_filter == 'EM ANDAMENTO' %}#eab308{% else %}#fef08a{% endif %};color:{% if status_filter == 'EM ANDAMENTO' %}#78350f{% else %}#92400e{% endif %};text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">
+    🟡 Em Andamento ({{ status_counts.get('EM ANDAMENTO', 0) }})
+  </a>
+  {% endif %}
+  {% if status_counts.get('ÁREA ATINGIDA', 0) > 0 %}
+  <a href="/admin?status=ÁREA ATINGIDA" style="padding:6px 12px;background:{% if status_filter == 'ÁREA ATINGIDA' %}#0369a1{% else %}#cffafe{% endif %};color:{% if status_filter == 'ÁREA ATINGIDA' %}white{% else %}#164e63{% endif %};text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">
+    🔵 Área Atingida ({{ status_counts.get('ÁREA ATINGIDA', 0) }})
+  </a>
+  {% endif %}
+  {% if status_counts.get('FINALIZADO', 0) > 0 %}
+  <a href="/admin?status=FINALIZADO" style="padding:6px 12px;background:{% if status_filter == 'FINALIZADO' %}#16a34a{% else %}#dcfce7{% endif %};color:{% if status_filter == 'FINALIZADO' %}white{% else %}#15803d{% endif %};text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">
+    🟢 Finalizado ({{ status_counts.get('FINALIZADO', 0) }})
+  </a>
+  {% endif %}
+</div>
+<div style="overflow-x:auto;">
 <table style="font-size:13px; border-collapse:collapse; width:100%;">
 <thead>
-<tr>
-<th style="padding:8px 6px; text-align:left;">OS</th>
-<th style="padding:8px 6px; text-align:left;">OPERAÇÃO</th>
-<th style="padding:8px 6px; text-align:left;">DATA O.S</th>
-<th style="padding:8px 6px; text-align:left;">FAZENDA</th>
-<th style="padding:8px 6px; text-align:left;">SETOR</th>
-<th style="padding:8px 6px; text-align:left;">UNIDADE</th>
-<th style="padding:8px 6px; text-align:left;">ÁREA O.S</th>
-<th style="padding:8px 6px; text-align:left;">Ações</th>
+<tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb;">
+<th style="padding:10px 6px; text-align:left;">OS</th>
+<th style="padding:10px 6px; text-align:left;">OPERAÇÃO</th>
+<th style="padding:10px 6px; text-align:left;">DATA O.S</th>
+<th style="padding:10px 6px; text-align:left;">FAZENDA</th>
+<th style="padding:10px 6px; text-align:left;">SETOR</th>
+<th style="padding:10px 6px; text-align:left;">UNIDADE</th>
+<th style="padding:10px 6px; text-align:right;">ÁREA</th>
+<th style="padding:10px 6px; text-align:right;">RELATADO</th>
+<th style="padding:10px 6px; text-align:center;">STATUS</th>
+<th style="padding:10px 6px; text-align:center;">AÇÕES</th>
 </tr>
 </thead>
 <tbody>
 {% for os in dados_os %}
-<tr>
-<td style="padding:8px 6px;">{{ os.os }}</td>
+<tr style="border-bottom:1px solid #e5e7eb;">
+<td style="padding:8px 6px;font-weight:700;">{{ os.os }}</td>
 <td style="padding:8px 6px;">{{ os.operacao }}</td>
 <td style="padding:8px 6px;">{{ os.data_os }}</td>
 <td style="padding:8px 6px;">{{ os.fazenda }}</td>
 <td style="padding:8px 6px;">{{ os.setor }}</td>
 <td style="padding:8px 6px;">{{ os.unidade or '' }}</td>
-<td style="padding:8px 6px;">{{ os.area_os }}</td>
-<td style="padding:8px 6px;">
-  <form method="POST" action="/admin/os/{{ os.id }}/excluir" onsubmit="return confirm('Deseja excluir esta O.S. e todos os relatos relacionados?');">
-    <button type="submit" style="padding:6px 10px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Excluir</button>
+<td style="padding:8px 6px;text-align:right;">{{ os.area_os }}</td>
+<td style="padding:8px 6px;text-align:right;font-weight:600;">{{ os.total_relatado|round(2) }}</td>
+<td style="padding:8px 6px;text-align:center;">
+  <span style="display:inline-block;padding:4px 8px;background:{% if os.status == 'AGUARDANDO' %}#e5e7eb{% elif os.status == 'EM ANDAMENTO' %}#fef08a{% elif os.status == 'ÁREA ATINGIDA' %}#cffafe{% else %}#dcfce7{% endif %};color:{% if os.status == 'AGUARDANDO' %}#475569{% elif os.status == 'EM ANDAMENTO' %}#78350f{% elif os.status == 'ÁREA ATINGIDA' %}#164e63{% else %}#15803d{% endif %};border-radius:6px;font-size:11px;font-weight:600;">
+    {{ os.icon }} {{ os.status }}
+  </span>
+</td>
+<td style="padding:8px 6px;text-align:center;">
+  <form method="POST" action="/admin/os/{{ os.id }}/excluir" onsubmit="return confirm('Deseja excluir esta O.S. e todos os relatos relacionados?');" style="display:inline;">
+    <button type="submit" style="padding:4px 10px;background:#dc2626;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;">Excluir</button>
   </form>
 </td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
 {% else %}
 <form method="POST" enctype="multipart/form-data">
   <input type="file" name="arquivo" required>
