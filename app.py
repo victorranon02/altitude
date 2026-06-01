@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 from sqlalchemy import inspect, text
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from io import BytesIO
+from functools import wraps
 import os
 
 app = Flask(__name__)
@@ -32,8 +33,51 @@ db = SQLAlchemy(app)
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 # ==================================
-# MODELO O.S
+# HELPER FUNCTIONS
+# ==================================
+
+def parse_date_range(start_str, end_str):
+    """Parse start and end dates for filtering"""
+    start_dt, end_dt = None, None
+    if start_str:
+        try:
+            start_dt = datetime.strptime(start_str, "%Y-%m-%d")
+        except ValueError:
+            pass
+    if end_str:
+        try:
+            end_dt = datetime.strptime(end_str, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            pass
+    return start_dt, end_dt
+
+def require_auth(perfil=None):
+    """Decorator to require authentication"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            piloto_id = session.get("piloto_id")
+            user_perfil = session.get("perfil")
+            if not piloto_id:
+                return redirect("/login")
+            if perfil and user_perfil != perfil:
+                return redirect("/login")
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def format_brasilia(value):
+    """Format datetime to Brasilia timezone"""
+    if not value:
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+
+# ==================================
+# MODELS
 # ==================================
 
 class OrdemServico(db.Model):
@@ -124,21 +168,17 @@ class ExecucaoOS(db.Model):
 def login_page():
     if session.get("piloto_id"):
         return redirect("/admin" if session.get("perfil") == "ADMINISTRADOR" else "/piloto")
-
     return render_template("login.html", erro=None)
 
 
 @app.route("/admin", methods=["GET", "POST"])
+@require_auth("ADMINISTRADOR")
 def importar_os():
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
 
     if request.method == "POST":
-
         arquivo = request.files.get("arquivo")
 
         if arquivo and arquivo.filename.endswith(".xlsx"):
-
             caminho = os.path.join(app.config["UPLOAD_FOLDER"], arquivo.filename)
             arquivo.save(caminho)
 
@@ -187,78 +227,50 @@ def importar_os():
             except Exception:
                 db.session.rollback()
 
-    # Filtro por status
-    status_filter = request.args.get("status", "").strip()
-    
     todos_os = OrdemServico.query.order_by(OrdemServico.os).all()
     
-    # Adiciona dados de status a cada O.S
     for os_item in todos_os:
         os_item.total_relatado = os_item.total_area_relatada()
         os_item.status = os_item.status_label()
         os_item.icon = os_item.status_icon()
-    
-    # Filtra por status se especificado
-    if status_filter:
-        dados_os = [os for os in todos_os if os.status == status_filter]
-    else:
-        dados_os = todos_os
-    
-    # Contagem por status
-    status_counts = {}
-    for os_item in todos_os:
-        status = os_item.status
-        status_counts[status] = status_counts.get(status, 0) + 1
     
     pilotos = Piloto.query.order_by(Piloto.nome).all()
     auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
 
     return render_template(
         "importar_os.html",
-        dados_os=dados_os,
+        dados_os=todos_os,
         is_admin=True,
         pilotos=pilotos,
         auxiliares=auxiliares,
-        status_filter=status_filter,
-        status_counts=status_counts,
     )
 
 @app.route("/admin/os/<int:os_id>/excluir", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def excluir_os(os_id):
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     os_item = OrdemServico.query.get_or_404(os_id)
     ExecucaoOS.query.filter_by(os_id=os_item.id).delete()
     db.session.delete(os_item)
     db.session.commit()
-
     return redirect("/admin")
 
 @app.route("/admin/pilotos/<int:piloto_id>/excluir", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def excluir_piloto(piloto_id):
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     piloto = Piloto.query.get_or_404(piloto_id)
     if piloto.perfil == "ADMINISTRADOR":
         return redirect("/admin")
-
     ExecucaoOS.query.filter_by(piloto_id=piloto.id).delete()
     db.session.delete(piloto)
     db.session.commit()
-
     return redirect("/admin")
 
 @app.route("/admin/auxiliares/<int:auxiliar_id>/excluir", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def excluir_auxiliar(auxiliar_id):
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     auxiliar = Auxiliar.query.get_or_404(auxiliar_id)
     db.session.delete(auxiliar)
     db.session.commit()
-
     return redirect("/admin")
 
 # ==================================
@@ -292,29 +304,12 @@ def login():
 # ==================================
 
 @app.route("/piloto", methods=["GET", "POST"])
+@require_auth("PILOTO")
 def piloto():
-
     piloto_id = session.get("piloto_id")
-
-    if not piloto_id or session.get("perfil") != "PILOTO":
-        return redirect("/login")
-
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    start_dt = None
-    end_dt = None
-
-    if start_date:
-        try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        except ValueError:
-            start_dt = None
-
-    if end_date:
-        try:
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError:
-            end_dt = None
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     form_error = None
     form_success = None
@@ -429,37 +424,19 @@ def piloto():
 
 
 @app.route("/piloto/painel")
+@require_auth("PILOTO")
 def piloto_painel():
-    piloto_id = session.get("piloto_id")
-    if not piloto_id or session.get("perfil") != "PILOTO":
-        return redirect("/login")
-
-    piloto = Piloto.query.get(piloto_id)
+    piloto = Piloto.query.get(session.get("piloto_id"))
     return render_template("piloto_painel.html", piloto=piloto)
 
 
 @app.route("/piloto/api/relatorios")
+@require_auth("PILOTO")
 def piloto_api_relatorio():
     piloto_id = session.get("piloto_id")
-    if not piloto_id or session.get("perfil") != "PILOTO":
-        return jsonify({"error": "unauthorized"}), 401
-
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    start_dt = None
-    end_dt = None
-
-    if start_date:
-        try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        except ValueError:
-            start_dt = None
-
-    if end_date:
-        try:
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError:
-            end_dt = None
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query.filter_by(piloto_id=piloto_id)
     if start_dt:
@@ -511,15 +488,10 @@ def piloto_api_relatorio():
 # ==================================
 
 @app.route("/os/<int:os_id>", methods=["GET", "POST"])
+@require_auth()
 def os_mobile(os_id):
-
     piloto_id = session.get("piloto_id")
-
-    if not piloto_id:
-        return redirect("/login")
-
     os_item = OrdemServico.query.get_or_404(os_id)
-
     auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
 
     if request.method == "POST":
@@ -566,27 +538,11 @@ def os_mobile(os_id):
 # ==================================
 
 @app.route("/admin/relatorios")
+@require_auth("ADMINISTRADOR")
 def admin_relatorios():
-    piloto_id = session.get("piloto_id")
-    if not piloto_id:
-        return redirect("/login")
-
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    start_dt = None
-    end_dt = None
-
-    if start_date:
-        try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        except ValueError:
-            start_dt = None
-
-    if end_date:
-        try:
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError:
-            end_dt = None
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query
     if start_dt:
@@ -644,18 +600,9 @@ def admin_relatorios():
     )
 
 
-def format_brasilia(value):
-    if not value:
-        return ""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
-    return value.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
-
-
 @app.route("/admin/apontamento/<int:apontamento_id>/editar", methods=["GET", "POST"])
+@require_auth("ADMINISTRADOR")
 def editar_apontamento(apontamento_id):
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
 
     apontamento = ExecucaoOS.query.get_or_404(apontamento_id)
     os_item = OrdemServico.query.get(apontamento.os_id)
@@ -685,77 +632,20 @@ def editar_apontamento(apontamento_id):
 
 
 @app.route("/admin/apontamento/<int:apontamento_id>/excluir", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def excluir_apontamento(apontamento_id):
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     apontamento = ExecucaoOS.query.get_or_404(apontamento_id)
     db.session.delete(apontamento)
     db.session.commit()
-
     return redirect("/admin/relatorios")
 
 
-
-@app.route("/admin/exportar_os")
-def exportar_os():
-    piloto_id = session.get("piloto_id")
-    if not piloto_id:
-        return redirect("/login")
-
-    registros = OrdemServico.query.order_by(OrdemServico.os).all()
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "OS"
-    ws.append(["OS", "Operação", "Data O.S", "Fazenda", "Setor", "Unidade", "Área O.S", "Finalizado"])
-
-    for os_item in registros:
-        ws.append([
-            os_item.os,
-            os_item.operacao or "",
-            os_item.data_os or "",
-            os_item.fazenda or "",
-            os_item.setor or "",
-            os_item.unidade or "",
-            os_item.area_os if os_item.area_os is not None else "",
-            "SIM" if os_item.finalizado else "NÃO",
-        ])
-
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-
-    return send_file(
-        output,
-        as_attachment=True,
-        download_name="os_altitude.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-
 @app.route("/admin/exportar_excel")
+@require_auth("ADMINISTRADOR")
 def exportar_excel():
-    piloto_id = session.get("piloto_id")
-    if not piloto_id:
-        return redirect("/login")
-
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
-    start_dt = None
-    end_dt = None
-
-    if start_date:
-        try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        except ValueError:
-            start_dt = None
-
-    if end_date:
-        try:
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError:
-            end_dt = None
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query
     if start_dt:
@@ -800,10 +690,8 @@ def exportar_excel():
 
 
 @app.route("/admin/pilotos", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def criar_piloto():
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     nome = (request.form.get("nome") or "").strip()
     usuario = (request.form.get("usuario") or "").strip().lower()
     senha = (request.form.get("senha") or "").strip()
@@ -816,10 +704,8 @@ def criar_piloto():
 
 
 @app.route("/admin/auxiliares", methods=["POST"])
+@require_auth("ADMINISTRADOR")
 def criar_auxiliar_admin():
-    if session.get("piloto_id") is None or session.get("perfil") != "ADMINISTRADOR":
-        return redirect("/login")
-
     nome = (request.form.get("nome") or "").strip()
     if nome and not Auxiliar.query.filter_by(nome=nome).first():
         db.session.add(Auxiliar(nome=nome))

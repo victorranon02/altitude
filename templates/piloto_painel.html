@@ -3,43 +3,70 @@
 {% block title %}Painel do Piloto{% endblock %}
 
 {% block content %}
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+<style>
+  .painel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .painel-header h2 { margin: 0; }
+  .painel-header p { margin: 0; color: #4b5563; }
+  .back-btn { padding: 8px 12px; background: #e5e7eb; color: #111827; text-decoration: none; border-radius: 8px; font-weight: 600; }
+  .filter-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-controls label { display: flex; flex-direction: column; font-size: 13px; color: #334155; }
+  .filter-controls input { margin-top: 6px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; }
+  .filter-buttons { display: flex; align-items: flex-end; gap: 8px; }
+  .filter-buttons button { padding: 8px 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  .btn-apply { background: #2563eb; color: white; }
+  .btn-clear { background: #e2e8f0; color: #111827; }
+  .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; margin-bottom: 18px; }
+  .chart-box { background: white; padding: 12px; border-radius: 12px; border: 1px solid #e5e7eb; }
+  .chart-box h4 { margin: 0 0 8px 0; }
+  .summary-box { background: white; padding: 12px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 18px; }
+  .summary-box h3 { margin-top: 0; }
+  .records-box { background: white; padding: 12px; border-radius: 12px; border: 1px solid #e5e7eb; }
+  .record-item { border-top: 1px solid #eef2ff; padding: 8px 0; }
+  .record-item:first-child { border-top: none; }
+  .record-header { display: flex; justify-content: space-between; align-items: center; }
+  .record-detail { font-size: 13px; color: #374151; margin-top: 6px; }
+  .record-date { font-size: 12px; color: #6b7280; }
+  .list-box ul { padding-left: 14px; margin: 0; }
+  .list-box li { margin-bottom: 4px; }
+</style>
+
+<div class="painel-header">
   <div>
     <h2>Painel - {{ piloto.nome }}</h2>
-    <p style="margin:0;color:#4b5563;">Resumo dinâmico das áreas relatadas</p>
+    <p>Resumo dinâmico das áreas relatadas</p>
   </div>
-  <a href="/piloto" style="padding:8px 12px;background:#e5e7eb;color:#111827;text-decoration:none;border-radius:8px;font-weight:600;">Voltar</a>
+  <a href="/piloto" class="back-btn">Voltar</a>
 </div>
 
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+<div class="filter-controls">
+  <label>
     Data início
-    <input id="startDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+    <input id="startDate" type="date" />
   </label>
-  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+  <label>
     Data fim
-    <input id="endDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+    <input id="endDate" type="date" />
   </label>
-  <div style="display:flex;align-items:end;gap:8px;">
-    <button id="applyFilter" style="padding:8px 12px;background:#2563eb;color:white;border:none;border-radius:8px;">Aplicar</button>
-    <button id="clearFilter" style="padding:8px 12px;background:#e2e8f0;color:#111827;border:none;border-radius:8px;">Limpar</button>
+  <div class="filter-buttons">
+    <button id="applyFilter" class="btn-apply">Aplicar</button>
+    <button id="clearFilter" class="btn-clear">Limpar</button>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start;">
-  <div style="background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
+<div class="chart-grid">
+  <div class="chart-box">
     <canvas id="areaChart" height="220"></canvas>
   </div>
-  <div style="background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
-    <h4 style="margin:0 0 8px 0;">Top Auxiliares</h4>
-    <ul id="topAuxiliares" style="padding-left:14px;margin:0;"></ul>
-    <h4 style="margin:12px 0 8px 0;">Top O.S</h4>
-    <ul id="topOs" style="padding-left:14px;margin:0;"></ul>
+  <div class="chart-box list-box">
+    <h4>Top Auxiliares</h4>
+    <ul id="topAuxiliares"></ul>
+    <h4 style="margin-top: 12px;">Top O.S</h4>
+    <ul id="topOs"></ul>
   </div>
 </div>
 
-<div style="margin-top:18px;background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
-  <h3 style="margin-top:0;">Seus relatos</h3>
+<div class="summary-box">
+  <h3>Seus relatos</h3>
   <div id="registrosList"></div>
 </div>
 
@@ -107,9 +134,14 @@ function renderLists(summary_aux, summary_os, registros) {
   registrosList.innerHTML = '';
   registros.forEach(r => {
     const div = document.createElement('div');
-    div.style.borderTop = '1px solid #eef2ff';
-    div.style.padding = '8px 0';
-    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><div><strong>${r.os}</strong> — ${r.auxiliar}</div><div style="font-size:12px;color:#6b7280">${r.data}</div></div><div style="font-size:13px;color:#374151;margin-top:6px;">${r.area} ha — ${r.observacao}</div>`;
+    div.className = 'record-item';
+    div.innerHTML = `
+      <div class="record-header">
+        <div><strong>${r.os}</strong> — ${r.auxiliar}</div>
+        <div class="record-date">${r.data}</div>
+      </div>
+      <div class="record-detail">${r.area} ha — ${r.observacao}</div>
+    `;
     registrosList.appendChild(div);
   });
 }
@@ -122,82 +154,15 @@ async function loadAndRender() {
 }
 
 document.getElementById('applyFilter').addEventListener('click', loadAndRender);
-document.getElementById('clearFilter').addEventListener('click', () => { document.getElementById('startDate').value=''; document.getElementById('endDate').value=''; loadAndRender(); });
+document.getElementById('clearFilter').addEventListener('click', () => { 
+  document.getElementById('startDate').value=''; 
+  document.getElementById('endDate').value=''; 
+  loadAndRender(); 
+});
 
-// load on open
 loadAndRender();
 </script>
-
 {% endblock %}
-{% extends 'base.html' %}
-
-{% block title %}Painel do Piloto{% endblock %}
-
-{% block content %}
-<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-  <div>
-    <h2 style="margin-bottom:6px;">Painel — {{ piloto.nome }}</h2>
-    <p style="margin:0;color:#4b5563;">Gráficos dinâmicos e lista das O.S. relatadas por você.</p>
-  </div>
-  <a href="/piloto" style="padding:8px 12px;background:#e5e7eb;color:#111827;text-decoration:none;border-radius:8px;font-weight:700;">Voltar</a>
-</div>
-
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
-  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-    Data início
-    <input id="startDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
-  </label>
-  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-    Data fim
-    <input id="endDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
-  </label>
-  <button id="applyFilter" style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Aplicar filtro</button>
-  <button id="clearFilter" style="padding:10px 14px;background:#e2e8f0;color:#1f2937;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Limpar</button>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-  <div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
-    <h3 style="margin-top:0;margin-bottom:8px;">Área por O.S.</h3>
-    <canvas id="chartOs" height="200"></canvas>
-  </div>
-  <div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
-    <h3 style="margin-top:0;margin-bottom:8px;">Área por Auxiliar</h3>
-    <canvas id="chartAux" height="200"></canvas>
-  </div>
-</div>
-
-<div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;margin-bottom:18px;">
-  <h3 style="margin-top:0;margin-bottom:8px;">Resumo rápido</h3>
-  <div id="resumoRapido" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
-</div>
-
-<div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
-  <h3 style="margin-top:0;margin-bottom:8px;">O.S. relatadas</h3>
-  <div id="listaRelatos"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  let chartOs = null;
-  let chartAux = null;
-
-  function formatNumber(n) {
-    return Number(n).toLocaleString('pt-BR', {maximumFractionDigits:2});
-  }
-
-  async function fetchData() {
-    const start = document.getElementById('startDate').value;
-    const end = document.getElementById('endDate').value;
-    const params = new URLSearchParams();
-    if (start) params.set('start_date', start);
-    if (end) params.set('end_date', end);
-
-    const res = await fetch('/piloto/api/relatorios?' + params.toString());
-    if (!res.ok) {
-      document.getElementById('listaRelatos').innerHTML = '<div style="color:#b91c1c;">Erro ao carregar dados.</div>';
-      return;
-    }
-    const data = await res.json();
 
     // Atualiza resumo
     const resumo = document.getElementById('resumoRapido');

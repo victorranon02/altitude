@@ -3,21 +3,60 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<div style="max-width:400px;margin:auto;">
-  <h1 style="text-align:center;color:#1d4ed8;">ALTIDUDE MOBILE</h1>
+<style>
+  .login-container {
+    max-width: 400px;
+    margin: auto;
+  }
+  .login-container h1 {
+    text-align: center;
+    color: #1d4ed8;
+    font-size: 28px;
+  }
+  .login-container .error {
+    color: red;
+    text-align: center;
+  }
+  .login-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .login-container input,
+  .login-container select {
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+  }
+  .login-container button {
+    padding: 14px;
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 10px;
+  }
+  .login-container .footer {
+    text-align: center;
+    color: #777;
+    margin-top: 18px;
+    font-size: 13px;
+  }
+</style>
+<div class="login-container">
+  <h1>ALTITUDE MOBILE</h1>
   {% if erro %}
-    <p style="color:red;text-align:center;">{{ erro }}</p>
+    <p class="error">{{ erro }}</p>
   {% endif %}
-  <form method="POST" action="/login" style="display:flex;flex-direction:column;gap:12px;">
-    <select name="perfil" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
+  <form method="POST" action="/login">
+    <select name="perfil" required>
       <option value="">Escolha o ambiente</option>
       <option value="ADMINISTRADOR">ADMINISTRADOR</option>
       <option value="PILOTO">PILOTO</option>
     </select>
-    <input type="text" name="usuario" placeholder="Usuário" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
-    <input type="password" name="senha" placeholder="Senha" required style="padding:14px;border:1px solid #ddd;border-radius:10px;">
-    <button type="submit" style="padding:14px;background:#1d4ed8;color:white;border:none;border-radius:10px;">ENTRAR</button>
+    <input type="text" name="usuario" placeholder="Usuário" required>
+    <input type="password" name="senha" placeholder="Senha" required>
+    <button type="submit">ENTRAR</button>
   </form>
-  <p style="text-align:center;color:#777;margin-top:18px;font-size:13px;">Desenvolvido por: VICTOR RANON</p>
+  <p class="footer">Desenvolvido por: VICTOR RANON</p>
 </div>
 {% endblock %}

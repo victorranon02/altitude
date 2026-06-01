@@ -3,18 +3,96 @@
 {% block title %}Editar Apontamento{% endblock %}
 
 {% block content %}
-<div style="max-width:600px;margin:0 auto;">
-  <a href="/admin/relatorios" style="display:inline-block;margin-bottom:16px;color:#2563eb;text-decoration:none;font-weight:600;">← Voltar</a>
+<style>
+  .edit-container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .edit-form {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .edit-form h2 {
+    margin: 0 0 6px 0;
+  }
+  .edit-form p {
+    margin: 0 0 20px 0;
+    color: #64748b;
+    font-size: 14px;
+  }
+  .edit-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .form-label {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-label span {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #0f172a;
+  }
+  .form-label select,
+  .form-label input,
+  .form-label textarea {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .form-label textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  .form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .form-buttons button,
+  .form-buttons a {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 14px;
+  }
+  .form-buttons button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .form-buttons a {
+    background: #e2e8f0;
+    color: #1f2937;
+    text-decoration: none;
+  }
+</style>
+<div class="edit-container">
+  <a href="/admin/relatorios" class="back-link">← Voltar</a>
   
-  <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;">
-    <h2 style="margin:0 0 6px 0;">EDITAR APONTAMENTO</h2>
-    <p style="margin:0 0 20px 0;color:#64748b;font-size:14px;">O.S: <strong>{{ os.os }}</strong></p>
+  <div class="edit-form">
+    <h2>EDITAR APONTAMENTO</h2>
+    <p>O.S: <strong>{{ os.os }}</strong></p>
     
-    <form method="POST" style="display:flex;flex-direction:column;gap:16px;">
+    <form method="POST">
       
-      <label style="display:flex;flex-direction:column;">
-        <span style="font-weight:600;margin-bottom:6px;color:#0f172a;">Auxiliar</span>
-        <select name="auxiliar" required style="padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+      <label class="form-label">
+        <span>Auxiliar</span>
+        <select name="auxiliar" required>
           <option value="">Selecione um auxiliar</option>
           {% for auxiliar in auxiliares %}
           <option value="{{ auxiliar.nome }}" {% if auxiliar.nome == apontamento.auxiliar %}selected{% endif %}>
@@ -24,39 +102,25 @@
         </select>
       </label>
 
-      <label style="display:flex;flex-direction:column;">
-        <span style="font-weight:600;margin-bottom:6px;color:#0f172a;">Área (hectares)</span>
+      <label class="form-label">
+        <span>Área (hectares)</span>
         <input 
           type="number" 
           name="area" 
           step="0.01" 
           value="{{ apontamento.area }}" 
-          required 
-          style="padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;"
+          required
         />
       </label>
 
-      <label style="display:flex;flex-direction:column;">
-        <span style="font-weight:600;margin-bottom:6px;color:#0f172a;">Observação</span>
-        <textarea 
-          name="observacao" 
-          style="padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;resize:vertical;min-height:100px;"
-        >{{ apontamento.observacao or '' }}</textarea>
+      <label class="form-label">
+        <span>Observação</span>
+        <textarea name="observacao">{{ apontamento.observacao or '' }}</textarea>
       </label>
 
-      <div style="display:flex;gap:10px;margin-top:16px;">
-        <button 
-          type="submit" 
-          style="flex:1;padding:12px;background:#2563eb;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
-        >
-          Salvar Alterações
-        </button>
-        <a 
-          href="/admin/relatorios" 
-          style="flex:1;padding:12px;background:#e2e8f0;color:#1f2937;text-decoration:none;border-radius:8px;font-weight:600;text-align:center;font-size:14px;"
-        >
-          Cancelar
-        </a>
+      <div class="form-buttons">
+        <button type="submit">Salvar Alterações</button>
+        <a href="/admin/relatorios">Cancelar</a>
       </div>
     </form>
   </div>

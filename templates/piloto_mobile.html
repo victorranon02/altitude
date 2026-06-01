@@ -3,109 +3,348 @@
 {% block title %}Piloto Mobile{% endblock %}
 
 {% block content %}
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+<style>
+  .pilot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .pilot-header h2 {
+    margin-bottom: 6px;
+  }
+  .pilot-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .pilot-actions a,
+  .pilot-actions button {
+    padding: 10px 14px;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .pilot-actions .painel-btn {
+    background: #0ea5e9;
+  }
+  .pilot-actions .new-os-btn {
+    background: #2563eb;
+  }
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+  }
+  .filter-form .form-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    color: #334155;
+    min-width: 180px;
+  }
+  .filter-form .form-group input {
+    margin-top: 6px;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+  }
+  .filter-form button,
+  .filter-form a {
+    padding: 10px 14px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .filter-form a {
+    background: #e2e8f0;
+    color: #1f2937;
+  }
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .summary-card {
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .summary-card-header {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .summary-card-value {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .card-blue {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+  }
+  .card-blue .summary-card-header {
+    color: #475569;
+  }
+  .card-blue .summary-card-value {
+    color: #3730a3;
+  }
+  .card-yellow {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+  }
+  .card-yellow .summary-card-header {
+    color: #525252;
+  }
+  .card-yellow .summary-card-value {
+    color: #92400e;
+  }
+  .card-green {
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+  }
+  .card-green .summary-card-header {
+    color: #065f46;
+  }
+  .card-green .summary-card-value {
+    color: #065f46;
+  }
+  .new-os-form {
+    margin-bottom: 18px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 16px;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+    padding: 18px;
+  }
+  .new-os-form .form-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    color: #334155;
+  }
+  .new-os-form .form-group label {
+    margin-bottom: 6px;
+  }
+  .new-os-form form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .new-os-form button {
+    width: 100%;
+    padding: 12px 14px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .search-box {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 10px;
+  }
+  .search-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: #111827;
+  }
+  .os-grid {
+    display: grid;
+    gap: 12px;
+  }
+  .os-card {
+    background: white;
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+  }
+  .os-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .os-code {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .os-code-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .os-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 8px;
+  }
+  .os-action {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    padding: 10px 12px;
+    background: #1d4ed8;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .logout-btn {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    padding: 12px 18px;
+    background: #ef4444;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .alert {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .alert-success {
+    background: #dcfce7;
+    color: #166534;
+  }
+</style>
+<div class="pilot-header">
   <div>
-    <h2 style="margin-bottom:6px;">Olá {{ piloto.nome }}</h2>
-    <p style="margin:0;color:#4b5563;">Selecione uma O.S. para abrir e relatar.</p>
+    <h2>Olá {{ piloto.nome }}</h2>
+    <p class="text-muted">Selecione uma O.S. para abrir e relatar.</p>
   </div>
-  <div style="display:flex;gap:8px;align-items:center;">
-    <a href="/piloto/painel" style="padding:10px 14px;background:#0ea5e9;color:white;border:none;border-radius:10px;font-weight:700;text-decoration:none;">Painel</a>
-    <button id="openNewOsBtn" type="button" style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Cadastrar nova O.S</button>
+  <div class="pilot-actions">
+    <a href="/piloto/painel" class="painel-btn">Painel</a>
+    <button id="openNewOsBtn" class="new-os-btn">Cadastrar nova O.S</button>
   </div>
 </div>
 
-<div style="display:grid;gap:14px;grid-template-columns:1fr;">
-  <form method="get" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;">
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;min-width:180px;">
+<div style="display: grid; gap: 14px; grid-template-columns: 1fr;">
+  <form method="get" class="filter-form">
+    <div class="form-group">
       Data início
-      <input type="date" name="start_date" value="{{ start_date or '' }}" style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;min-width:180px;">
+      <input type="date" name="start_date" value="{{ start_date or '' }}" />
+    </div>
+    <div class="form-group">
       Data fim
-      <input type="date" name="end_date" value="{{ end_date or '' }}" style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <button type="submit" style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Aplicar filtro</button>
-    <a href="/piloto" style="padding:10px 14px;background:#e2e8f0;color:#1f2937;text-decoration:none;border-radius:10px;font-weight:700;">Limpar filtros</a>
+      <input type="date" name="end_date" value="{{ end_date or '' }}" />
+    </div>
+    <button type="submit">Aplicar filtro</button>
+    <a href="/piloto">Limpar filtros</a>
   </form>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
-    <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:16px;padding:16px;">
-      <div style="font-size:12px;color:#475569;margin-bottom:8px;">Sua área relatada</div>
-      <div style="font-size:24px;font-weight:700;color:#3730a3;">{{ total_area_pilot|round(2) }}</div>
+  <div class="summary-cards">
+    <div class="summary-card card-blue">
+      <div class="summary-card-header">Sua área relatada</div>
+      <div class="summary-card-value">{{ total_area_pilot|round(2) }}</div>
     </div>
-    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:16px;padding:16px;">
-      <div style="font-size:12px;color:#525252;margin-bottom:8px;">Relatos no período</div>
-      <div style="font-size:24px;font-weight:700;color:#92400e;">{{ total_records_pilot }}</div>
+    <div class="summary-card card-yellow">
+      <div class="summary-card-header">Relatos no período</div>
+      <div class="summary-card-value">{{ total_records_pilot }}</div>
     </div>
-    <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:16px;padding:16px;">
-      <div style="font-size:12px;color:#065f46;margin-bottom:8px;">Auxiliares usados</div>
-      <div style="font-size:24px;font-weight:700;color:#065f46;">{{ summary_auxiliares|length }}</div>
+    <div class="summary-card card-green">
+      <div class="summary-card-header">Auxiliares usados</div>
+      <div class="summary-card-value">{{ summary_auxiliares|length }}</div>
     </div>
   </div>
 </div>
 
-<div id="newOsForm" style="display:{{ 'block' if form_error or form_success else 'none' }};margin-bottom:18px;background:#fff;border:1px solid #d1d5db;border-radius:16px;box-shadow:0 16px 32px rgba(15,23,42,0.08);padding:18px;">
+<div id="newOsForm" class="new-os-form" style="display: {{ 'block' if form_error or form_success else 'none' }};">
   {% if form_error %}
-  <div style="margin-bottom:12px;padding:12px;border-radius:10px;background:#fee2e2;color:#991b1b;">{{ form_error }}</div>
+  <div class="alert alert-error">{{ form_error }}</div>
   {% endif %}
   {% if form_success %}
-  <div style="margin-bottom:12px;padding:12px;border-radius:10px;background:#dcfce7;color:#166534;">{{ form_success }}</div>
+  <div class="alert alert-success">{{ form_success }}</div>
   {% endif %}
-  <form method="POST" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      OS
-      <input type="text" name="os" value="{{ new_os_data.os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Operação
-      <input type="text" name="operacao" value="{{ new_os_data.operacao }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Data O.S
-      <input type="date" name="data_os" value="{{ new_os_data.data_os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Fazenda
-      <input type="text" name="fazenda" value="{{ new_os_data.fazenda }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Setor
-      <input type="text" name="setor" value="{{ new_os_data.setor }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Área O.S
-      <input type="number" step="0.01" name="area_os" value="{{ new_os_data.area_os }}" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;" />
-    </label>
-    <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
-      Unidade
-      <select name="unidade" required style="margin-top:6px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:white;">
+  <form method="POST">
+    <div class="form-group">
+      <label>OS</label>
+      <input type="text" name="os" value="{{ new_os_data.os }}" required />
+    </div>
+    <div class="form-group">
+      <label>Operação</label>
+      <input type="text" name="operacao" value="{{ new_os_data.operacao }}" required />
+    </div>
+    <div class="form-group">
+      <label>Data O.S</label>
+      <input type="date" name="data_os" value="{{ new_os_data.data_os }}" required />
+    </div>
+    <div class="form-group">
+      <label>Fazenda</label>
+      <input type="text" name="fazenda" value="{{ new_os_data.fazenda }}" required />
+    </div>
+    <div class="form-group">
+      <label>Setor</label>
+      <input type="text" name="setor" value="{{ new_os_data.setor }}" required />
+    </div>
+    <div class="form-group">
+      <label>Área O.S</label>
+      <input type="number" step="0.01" name="area_os" value="{{ new_os_data.area_os }}" required />
+    </div>
+    <div class="form-group">
+      <label>Unidade</label>
+      <select name="unidade" required>
         <option value="" disabled {% if not new_os_data.unidade %}selected{% endif %}>Selecione uma unidade</option>
         <option value="MOEMA" {% if new_os_data.unidade == 'MOEMA' %}selected{% endif %}>MOEMA</option>
         <option value="GUARIROBA" {% if new_os_data.unidade == 'GUARIROBA' %}selected{% endif %}>GUARIROBA</option>
         <option value="OUROESTE" {% if new_os_data.unidade == 'OUROESTE' %}selected{% endif %}>OUROESTE</option>
       </select>
-    </label>
-    <div style="display:flex;align-items:flex-end;">
-      <button type="submit" style="width:100%;padding:12px 14px;background:#10b981;color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;">Salvar O.S</button>
     </div>
+    <button type="submit">Salvar O.S</button>
   </form>
 </div>
 
-<div style="margin-bottom:14px; display:flex; align-items:center; gap:10px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px;">
-  <span style="font-size:18px;">🔎</span>
-  <input id="searchOs" type="text" placeholder="Pesquisar O.S, fazenda, setor ou UNIDADE" style="width:100%; border:none; outline:none; background:transparent; font-size:14px; color:#111827;">
+<div class="search-box">
+  <span>🔎</span>
+  <input id="searchOs" type="text" placeholder="Pesquisar O.S, fazenda, setor ou UNIDADE" />
 </div>
 
-<div id="osList" style="display:grid; gap:12px;">
+<div id="osList" class="os-grid">
 {% for os in lista_os %}
-<div class="os-card" data-search="{{ os.os }} {{ os.fazenda }} {{ os.setor }} {{ os.unidade or '' }}" style="background:#fff;padding:14px;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.06);border:1px solid #e5e7eb;">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;">
+<div class="os-card" data-search="{{ os.os }} {{ os.fazenda }} {{ os.setor }} {{ os.unidade or '' }}">
+  <div class="os-card-header">
     <div>
-      <div style="font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em;">O.S.</div>
-      <div style="font-size:18px; font-weight:700; color:#111827;">{{ os.os }}</div>
+      <div class="os-code">O.S.</div>
+      <div class="os-code-value">{{ os.os }}</div>
     </div>
-    <span class="status-pill {{ os.status_class }}" style="font-size:12px;">{{ os.icon }} {{ os.status }}</span>
+    <span class="status-pill {{ os.status_class }}">{{ os.icon }} {{ os.status }}</span>
   </div>
-  <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; font-size:13px; color:#374151; margin-bottom:8px;">
+  <div class="os-details">
     <div><strong>Fazenda:</strong> {{ os.fazenda or '-' }}</div>
     <div><strong>Setor:</strong> {{ os.setor or '-' }}</div>
     <div><strong>Unidade:</strong> {{ os.unidade or '-' }}</div>
@@ -113,12 +352,12 @@
     <div><strong>Prevista:</strong> {{ os.area_os or 0 }} ha</div>
     <div><strong>Relatada:</strong> {{ os.total_relatado or 0 }} ha</div>
   </div>
-  <a href="/os/{{ os.id }}" style="display:inline-block;width:100%;text-align:center;padding:10px 12px;background:#1d4ed8;color:white;border-radius:10px;text-decoration:none;font-weight:600;">ABRIR O.S</a>
+  <a href="/os/{{ os.id }}" class="os-action">ABRIR O.S</a>
 </div>
 {% endfor %}
 </div>
 
-<a href="/logout" style="display:block;text-align:center;margin-top:16px;padding:12px 18px;background:#ef4444;color:white;border-radius:10px;text-decoration:none;font-weight:600;">SAIR</a>
+<a href="/logout" class="logout-btn">SAIR</a>
 
 <script>
   const input = document.getElementById('searchOs');
