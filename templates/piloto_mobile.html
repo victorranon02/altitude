@@ -36,6 +36,25 @@
   .pilot-actions .new-os-btn {
     background: #2563eb;
   }
+  .view-toggle {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .view-toggle button {
+    padding: 10px 16px;
+    background: #e2e8f0;
+    color: #1f2937;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .view-toggle button.active {
+    background: #2563eb;
+    color: #fff;
+  }
   .filter-form {
     display: flex;
     flex-wrap: wrap;
@@ -256,6 +275,11 @@
 
 <div style="display: grid; gap: 14px; grid-template-columns: 1fr;">
   <form method="get" class="filter-form">
+    <div class="view-toggle">
+      <button type="button" class="toggle-mode" data-mode="all">Todas O.S.</button>
+      <button type="button" class="toggle-mode" data-mode="mine">Meus apontamentos</button>
+    </div>
+    <input type="hidden" name="view_mode" id="viewModeInput" value="{{ view_mode or 'all' }}" />
     <div class="form-group">
       Data início
       <input type="date" name="start_date" value="{{ start_date or '' }}" />
@@ -378,5 +402,23 @@
       newOsForm.style.display = newOsForm.style.display === 'none' ? 'block' : 'none';
     });
   }
+
+  const viewModeInput = document.getElementById('viewModeInput');
+  const viewToggleButtons = Array.from(document.querySelectorAll('.view-toggle button'));
+  function setViewMode(mode) {
+    viewModeInput.value = mode;
+    viewToggleButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+  }
+
+  viewToggleButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      setViewMode(button.dataset.mode);
+      document.querySelector('.filter-form').submit();
+    });
+  });
+
+  setViewMode('{{ view_mode|default("all") }}');
 </script>
 {% endblock %}

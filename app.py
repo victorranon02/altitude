@@ -309,6 +309,9 @@ def piloto():
     piloto_id = session.get("piloto_id")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
+    view_mode = request.args.get("view_mode", "all")
+    if view_mode not in ("all", "mine"):
+        view_mode = "all"
     start_dt, end_dt = parse_date_range(start_date, end_date)
 
     form_error = None
@@ -370,7 +373,17 @@ def piloto():
                 new_os_data = {key: "" for key in new_os_data}
 
     piloto = Piloto.query.get(piloto_id)
-    lista_os = OrdemServico.query.order_by(OrdemServico.os).all()
+
+    if view_mode == "mine":
+        query_os_ids = ExecucaoOS.query.with_entities(ExecucaoOS.os_id).filter_by(piloto_id=piloto_id)
+        if start_dt:
+            query_os_ids = query_os_ids.filter(ExecucaoOS.data_hora >= start_dt)
+        if end_dt:
+            query_os_ids = query_os_ids.filter(ExecucaoOS.data_hora < end_dt)
+        os_ids = [os_id for (os_id,) in query_os_ids.distinct().all()]
+        lista_os = OrdemServico.query.filter(OrdemServico.id.in_(os_ids)).order_by(OrdemServico.os).all() if os_ids else []
+    else:
+        lista_os = OrdemServico.query.order_by(OrdemServico.os).all()
 
     for os_item in lista_os:
         os_item.total_relatado = os_item.total_area_relatada()
@@ -416,6 +429,7 @@ def piloto():
         new_os_data=new_os_data,
         start_date=start_date,
         end_date=end_date,
+        view_mode=view_mode,
         total_area_pilot=total_area_pilot,
         total_records_pilot=total_records_pilot,
         summary_auxiliares=summary_auxiliares,
