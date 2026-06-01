@@ -423,13 +423,6 @@ def piloto():
     )
 
 
-@app.route("/piloto/painel")
-@require_auth("PILOTO")
-def piloto_painel():
-    piloto = Piloto.query.get(session.get("piloto_id"))
-    return render_template("piloto_painel.html", piloto=piloto)
-
-
 @app.route("/piloto/api/relatorios")
 @require_auth("PILOTO")
 def piloto_api_relatorio():
