@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+from flask import Flask, render_template, request, redirect, session, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from openpyxl import Workbook, load_workbook
 from sqlalchemy import inspect, text
@@ -426,6 +426,85 @@ def piloto():
         summary_auxiliares=summary_auxiliares,
         dados_piloto=dados_piloto,
     )
+
+
+@app.route("/piloto/painel")
+def piloto_painel():
+    piloto_id = session.get("piloto_id")
+    if not piloto_id or session.get("perfil") != "PILOTO":
+        return redirect("/login")
+
+    piloto = Piloto.query.get(piloto_id)
+    return render_template("piloto_painel.html", piloto=piloto)
+
+
+@app.route("/piloto/api/relatorios")
+def piloto_api_relatorio():
+    piloto_id = session.get("piloto_id")
+    if not piloto_id or session.get("perfil") != "PILOTO":
+        return jsonify({"error": "unauthorized"}), 401
+
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    start_dt = None
+    end_dt = None
+
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            start_dt = None
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            end_dt = None
+
+    query = ExecucaoOS.query.filter_by(piloto_id=piloto_id)
+    if start_dt:
+        query = query.filter(ExecucaoOS.data_hora >= start_dt)
+    if end_dt:
+        query = query.filter(ExecucaoOS.data_hora < end_dt)
+
+    registros = query.order_by(ExecucaoOS.data_hora.desc()).all()
+
+    total_area = 0.0
+    summary_aux = {}
+    summary_os = {}
+    registros_list = []
+
+    for r in registros:
+        area = float(r.area or 0)
+        total_area += area
+        auxiliar = r.auxiliar or "N/A"
+        summary_aux[auxiliar] = summary_aux.get(auxiliar, 0.0) + area
+
+        os_item = OrdemServico.query.get(r.os_id)
+        os_code = os_item.os if os_item else "N/A"
+        summary_os[os_code] = summary_os.get(os_code, 0.0) + area
+
+        registros_list.append({
+            "id": r.id,
+            "os": os_code,
+            "os_id": r.os_id,
+            "area": area,
+            "auxiliar": auxiliar,
+            "observacao": r.observacao or "",
+            "data": format_brasilia(r.data_hora),
+        })
+
+    # sort summaries
+    summary_aux_list = sorted(summary_aux.items(), key=lambda x: x[1], reverse=True)
+    summary_os_list = sorted(summary_os.items(), key=lambda x: x[1], reverse=True)
+
+    return jsonify({
+        "total_area": total_area,
+        "summary_auxiliares": summary_aux_list,
+        "summary_os": summary_os_list,
+        "registros": registros_list,
+        "count": len(registros_list),
+    })
 
 # ==================================
 # TELA O.S (RELATOS)

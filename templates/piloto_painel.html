@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel do Piloto{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div>
+    <h2>Painel - {{ piloto.nome }}</h2>
+    <p style="margin:0;color:#4b5563;">Resumo dinâmico das áreas relatadas</p>
+  </div>
+  <a href="/piloto" style="padding:8px 12px;background:#e5e7eb;color:#111827;text-decoration:none;border-radius:8px;font-weight:600;">Voltar</a>
+</div>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+    Data início
+    <input id="startDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+  </label>
+  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+    Data fim
+    <input id="endDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+  </label>
+  <div style="display:flex;align-items:end;gap:8px;">
+    <button id="applyFilter" style="padding:8px 12px;background:#2563eb;color:white;border:none;border-radius:8px;">Aplicar</button>
+    <button id="clearFilter" style="padding:8px 12px;background:#e2e8f0;color:#111827;border:none;border-radius:8px;">Limpar</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start;">
+  <div style="background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
+    <canvas id="areaChart" height="220"></canvas>
+  </div>
+  <div style="background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
+    <h4 style="margin:0 0 8px 0;">Top Auxiliares</h4>
+    <ul id="topAuxiliares" style="padding-left:14px;margin:0;"></ul>
+    <h4 style="margin:12px 0 8px 0;">Top O.S</h4>
+    <ul id="topOs" style="padding-left:14px;margin:0;"></ul>
+  </div>
+</div>
+
+<div style="margin-top:18px;background:white;padding:12px;border-radius:12px;border:1px solid #e5e7eb;">
+  <h3 style="margin-top:0;">Seus relatos</h3>
+  <div id="registrosList"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function fetchData() {
+  const start = document.getElementById('startDate').value;
+  const end = document.getElementById('endDate').value;
+  const params = new URLSearchParams();
+  if (start) params.append('start_date', start);
+  if (end) params.append('end_date', end);
+
+  const res = await fetch('/piloto/api/relatorios?' + params.toString());
+  if (!res.ok) {
+    alert('Erro ao carregar dados');
+    return null;
+  }
+  return res.json();
+}
+
+let chart = null;
+function renderChart(summary_os) {
+  const labels = summary_os.map(item => item[0]);
+  const data = summary_os.map(item => item[1]);
+
+  const ctx = document.getElementById('areaChart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Área por O.S (ha)',
+        data: data,
+        backgroundColor: 'rgba(37,99,235,0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function renderLists(summary_aux, summary_os, registros) {
+  const topAux = document.getElementById('topAuxiliares');
+  const topOs = document.getElementById('topOs');
+  const registrosList = document.getElementById('registrosList');
+
+  topAux.innerHTML = '';
+  summary_aux.forEach(a => {
+    const li = document.createElement('li');
+    li.textContent = `${a[0]} — ${a[1].toFixed(2)} ha`;
+    topAux.appendChild(li);
+  });
+
+  topOs.innerHTML = '';
+  summary_os.forEach(o => {
+    const li = document.createElement('li');
+    li.textContent = `${o[0]} — ${o[1].toFixed(2)} ha`;
+    topOs.appendChild(li);
+  });
+
+  registrosList.innerHTML = '';
+  registros.forEach(r => {
+    const div = document.createElement('div');
+    div.style.borderTop = '1px solid #eef2ff';
+    div.style.padding = '8px 0';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><div><strong>${r.os}</strong> — ${r.auxiliar}</div><div style="font-size:12px;color:#6b7280">${r.data}</div></div><div style="font-size:13px;color:#374151;margin-top:6px;">${r.area} ha — ${r.observacao}</div>`;
+    registrosList.appendChild(div);
+  });
+}
+
+async function loadAndRender() {
+  const data = await fetchData();
+  if (!data) return;
+  renderChart(data.summary_os.slice(0,20));
+  renderLists(data.summary_auxiliares.slice(0,20), data.summary_os.slice(0,20), data.registros);
+}
+
+document.getElementById('applyFilter').addEventListener('click', loadAndRender);
+document.getElementById('clearFilter').addEventListener('click', () => { document.getElementById('startDate').value=''; document.getElementById('endDate').value=''; loadAndRender(); });
+
+// load on open
+loadAndRender();
+</script>
+
+{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Painel do Piloto{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+  <div>
+    <h2 style="margin-bottom:6px;">Painel — {{ piloto.nome }}</h2>
+    <p style="margin:0;color:#4b5563;">Gráficos dinâmicos e lista das O.S. relatadas por você.</p>
+  </div>
+  <a href="/piloto" style="padding:8px 12px;background:#e5e7eb;color:#111827;text-decoration:none;border-radius:8px;font-weight:700;">Voltar</a>
+</div>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+    Data início
+    <input id="startDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+  </label>
+  <label style="display:flex;flex-direction:column;font-size:13px;color:#334155;">
+    Data fim
+    <input id="endDate" type="date" style="margin-top:6px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;" />
+  </label>
+  <button id="applyFilter" style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Aplicar filtro</button>
+  <button id="clearFilter" style="padding:10px 14px;background:#e2e8f0;color:#1f2937;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Limpar</button>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+  <div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
+    <h3 style="margin-top:0;margin-bottom:8px;">Área por O.S.</h3>
+    <canvas id="chartOs" height="200"></canvas>
+  </div>
+  <div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
+    <h3 style="margin-top:0;margin-bottom:8px;">Área por Auxiliar</h3>
+    <canvas id="chartAux" height="200"></canvas>
+  </div>
+</div>
+
+<div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;margin-bottom:18px;">
+  <h3 style="margin-top:0;margin-bottom:8px;">Resumo rápido</h3>
+  <div id="resumoRapido" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+</div>
+
+<div style="background:#fff;border:1px solid #e6eef8;border-radius:12px;padding:12px;">
+  <h3 style="margin-top:0;margin-bottom:8px;">O.S. relatadas</h3>
+  <div id="listaRelatos"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let chartOs = null;
+  let chartAux = null;
+
+  function formatNumber(n) {
+    return Number(n).toLocaleString('pt-BR', {maximumFractionDigits:2});
+  }
+
+  async function fetchData() {
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    const params = new URLSearchParams();
+    if (start) params.set('start_date', start);
+    if (end) params.set('end_date', end);
+
+    const res = await fetch('/piloto/api/relatorios?' + params.toString());
+    if (!res.ok) {
+      document.getElementById('listaRelatos').innerHTML = '<div style="color:#b91c1c;">Erro ao carregar dados.</div>';
+      return;
+    }
+    const data = await res.json();
+
+    // Atualiza resumo
+    const resumo = document.getElementById('resumoRapido');
+    resumo.innerHTML = '';
+    const totalDiv = document.createElement('div');
+    totalDiv.style.minWidth = '140px';
+    totalDiv.style.background = '#eef2ff';
+    totalDiv.style.padding = '8px';
+    totalDiv.style.borderRadius = '8px';
+    totalDiv.innerHTML = '<div style="font-size:13px;color:#475569;">Área total</div><div style="font-weight:700;font-size:18px;color:#3730a3;">' + formatNumber(data.total_area) + ' ha</div>';
+    resumo.appendChild(totalDiv);
+
+    const countDiv = document.createElement('div');
+    countDiv.style.minWidth = '140px';
+    countDiv.style.background = '#fef3c7';
+    countDiv.style.padding = '8px';
+    countDiv.style.borderRadius = '8px';
+    countDiv.innerHTML = '<div style="font-size:13px;color:#525252;">Registros</div><div style="font-weight:700;font-size:18px;color:#92400e;">' + data.count + '</div>';
+    resumo.appendChild(countDiv);
+
+    // Gráfico O.S
+    const labelsOs = data.summary_os.map(i => i[0]);
+    const valuesOs = data.summary_os.map(i => i[1]);
+
+    const ctxOs = document.getElementById('chartOs').getContext('2d');
+    if (chartOs) chartOs.destroy();
+    chartOs = new Chart(ctxOs, {
+      type: 'bar',
+      data: {
+        labels: labelsOs,
+        datasets: [{ label: 'Área (ha)', data: valuesOs, backgroundColor: '#3b82f6' }]
+      },
+      options: { responsive:true, maintainAspectRatio:false }
+    });
+
+    // Gráfico Aux
+    const labelsAux = data.summary_auxiliares.map(i => i[0]);
+    const valuesAux = data.summary_auxiliares.map(i => i[1]);
+
+    const ctxAux = document.getElementById('chartAux').getContext('2d');
+    if (chartAux) chartAux.destroy();
+    chartAux = new Chart(ctxAux, {
+      type: 'bar',
+      data: {
+        labels: labelsAux,
+        datasets: [{ label: 'Área (ha)', data: valuesAux, backgroundColor: '#10b981' }]
+      },
+      options: { responsive:true, maintainAspectRatio:false }
+    });
+
+    // Lista de relatos
+    const lista = document.getElementById('listaRelatos');
+    lista.innerHTML = '';
+    if (data.registros.length === 0) {
+      lista.innerHTML = '<div style="color:#6b7280;">Nenhum relato encontrado para o período selecionado.</div>';
+    } else {
+      data.registros.forEach(r => {
+        const item = document.createElement('div');
+        item.style.borderBottom = '1px solid #eef2ff';
+        item.style.padding = '8px 0';
+        item.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+          + '<div><strong>' + (r.os || 'N/A') + '</strong> <div style="font-size:12px;color:#6b7280;">' + r.data + '</div></div>'
+          + '<div style="text-align:right"><div style="font-weight:700;color:#111827;">' + formatNumber(r.area) + ' ha</div><div style="font-size:12px;color:#475569;">Aux: ' + (r.auxiliar || 'N/A') + '</div></div>'
+          + '</div>'
+          + '<div style="margin-top:6px;color:#374151;">' + (r.observacao || '') + '</div>';
+
+        // link para abrir O.S
+        const link = document.createElement('a');
+        link.href = '/os/' + r.os_id;
+        link.style.display = 'inline-block';
+        link.style.marginTop = '8px';
+        link.style.padding = '6px 10px';
+        link.style.background = '#1d4ed8';
+        link.style.color = 'white';
+        link.style.borderRadius = '8px';
+        link.style.textDecoration = 'none';
+        link.innerText = 'Abrir O.S';
+        item.appendChild(link);
+
+        lista.appendChild(item);
+      });
+    }
+  }
+
+  document.getElementById('applyFilter').addEventListener('click', fetchData);
+  document.getElementById('clearFilter').addEventListener('click', function() { document.getElementById('startDate').value=''; document.getElementById('endDate').value=''; fetchData(); });
+
+  // carregar ao abrir
+  fetchData();
+</script>
+
+{% endblock %}
