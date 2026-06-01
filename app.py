@@ -299,6 +299,23 @@ def piloto():
     if not piloto_id or session.get("perfil") != "PILOTO":
         return redirect("/login")
 
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    start_dt = None
+    end_dt = None
+
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            start_dt = None
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            end_dt = None
+
     form_error = None
     form_success = None
     new_os_data = {
@@ -373,6 +390,28 @@ def piloto():
         else:
             os_item.status_class = "status-aguardando"
 
+    query = ExecucaoOS.query.filter_by(piloto_id=piloto_id)
+    if start_dt:
+        query = query.filter(ExecucaoOS.data_hora >= start_dt)
+    if end_dt:
+        query = query.filter(ExecucaoOS.data_hora < end_dt)
+
+    dados_piloto = query.order_by(ExecucaoOS.data_hora.desc()).all()
+    total_area_pilot = 0.0
+    total_records_pilot = len(dados_piloto)
+    summary_auxiliares = {}
+
+    for registro in dados_piloto:
+        area_registro = float(registro.area or 0)
+        total_area_pilot += area_registro
+        auxiliar_nome = registro.auxiliar or "N/A"
+        summary_auxiliares[auxiliar_nome] = summary_auxiliares.get(auxiliar_nome, 0.0) + area_registro
+        piloto_registro = Piloto.query.get(registro.piloto_id)
+        registro.piloto_nome = piloto_registro.nome if piloto_registro else "N/A"
+        registro.data_formatada = format_brasilia(registro.data_hora)
+
+    summary_auxiliares = sorted(summary_auxiliares.items(), key=lambda item: item[1], reverse=True)
+
     return render_template(
         "piloto_mobile.html",
         piloto=piloto,
@@ -380,6 +419,12 @@ def piloto():
         form_error=form_error,
         form_success=form_success,
         new_os_data=new_os_data,
+        start_date=start_date,
+        end_date=end_date,
+        total_area_pilot=total_area_pilot,
+        total_records_pilot=total_records_pilot,
+        summary_auxiliares=summary_auxiliares,
+        dados_piloto=dados_piloto,
     )
 
 # ==================================
