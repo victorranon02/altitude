@@ -58,6 +58,9 @@
 </div>
 
 <form method="get" class="filter-form">
+  {% if os_id %}
+  <input type="hidden" name="os_id" value="{{ os_id }}" />
+  {% endif %}
   <label>
     Data início
     <input type="date" name="start_date" value="{{ start_date or '' }}" />
@@ -69,6 +72,12 @@
   <button type="submit">Aplicar filtro</button>
   <a href="/admin/relatorios">Limpar filtros</a>
 </form>
+
+{% if os_id %}
+<div style="margin-top: 12px; padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e3a8a; font-weight: 600;">
+  Mostrando apenas os apontamentos da O.S selecionada.
+</div>
+{% endif %}
 
 <div class="stats-grid">
   <div class="stat-card card-blue">

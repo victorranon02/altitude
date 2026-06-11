@@ -32,11 +32,16 @@
   .action-link { display: inline-block; padding: 8px 12px; background: #1d4ed8; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; }
   .action-link-export { background: #0f766e; }
   .table-wrapper { overflow-x: auto; }
+  .table-search { display: flex; align-items: center; gap: 10px; margin: 12px 0 8px 0; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; }
+  .table-search input { width: 100%; border: none; outline: none; background: transparent; font-size: 14px; }
+  .table-search .search-reset { padding: 8px 12px; border: none; border-radius: 8px; background: #e2e8f0; color: #1f2937; cursor: pointer; font-weight: 600; }
   table { font-size: 13px; border-collapse: collapse; width: 100%; }
   thead { background: #f8fafc; border-bottom: 2px solid #e5e7eb; }
   th { padding: 10px 6px; text-align: left; }
   td { padding: 8px 6px; border-bottom: 1px solid #e5e7eb; }
   tbody tr:hover { background: #f8fafc; }
+  .os-link { color: #1d4ed8; text-decoration: none; font-weight: 700; }
+  .os-link:hover { text-decoration: underline; }
   .table-strong { font-weight: 700; }
   .table-status { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
   .status-waiting { background: #e5e7eb; color: #475569; }
@@ -121,6 +126,12 @@
   <a href="/admin/exportar_excel" class="action-link action-link-export">Exportar Relatórios</a>
 </div>
 
+<div class="table-search">
+  <span>🔎</span>
+  <input id="osSearchInput" type="search" placeholder="Pesquisar O.S, operação, fazenda, setor, unidade, área ou status" />
+  <button type="button" id="osSearchReset" class="search-reset">Limpar</button>
+</div>
+
 <div class="table-wrapper">
   <table>
     <thead>
@@ -139,8 +150,8 @@
     </thead>
     <tbody>
       {% for os in dados_os %}
-      <tr>
-        <td class="table-strong">{{ os.os }}</td>
+      <tr data-search="{{ os.os }} {{ os.operacao }} {{ os.data_os }} {{ os.fazenda }} {{ os.setor }} {{ os.unidade or '' }} {{ os.area_os }} {{ os.total_relatado|round(2) }} {{ os.status }}">
+        <td class="table-strong"><a class="os-link" href="/admin/relatorios?os_id={{ os.id }}">{{ os.os }}</a></td>
         <td>{{ os.operacao }}</td>
         <td>{{ os.data_os }}</td>
         <td>{{ os.fazenda }}</td>
@@ -163,6 +174,31 @@
     </tbody>
   </table>
 </div>
+<script>
+  const osSearchInput = document.getElementById('osSearchInput');
+  const osSearchReset = document.getElementById('osSearchReset');
+  const osRows = Array.from(document.querySelectorAll('tbody tr[data-search]'));
+
+  function filterOsRows() {
+    const query = (osSearchInput.value || '').trim().toLowerCase();
+    osRows.forEach(row => {
+      const searchable = (row.getAttribute('data-search') || '').toLowerCase();
+      row.style.display = searchable.includes(query) ? '' : 'none';
+    });
+  }
+
+  if (osSearchInput) {
+    osSearchInput.addEventListener('input', filterOsRows);
+  }
+
+  if (osSearchReset) {
+    osSearchReset.addEventListener('click', () => {
+      osSearchInput.value = '';
+      filterOsRows();
+      osSearchInput.focus();
+    });
+  }
+</script>
 {% else %}
 <form method="POST" enctype="multipart/form-data">
   <input type="file" name="arquivo" required>

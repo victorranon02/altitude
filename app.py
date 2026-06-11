@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from sqlalchemy import inspect, text
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
@@ -549,9 +549,12 @@ def os_mobile(os_id):
 def admin_relatorios():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
+    os_id = request.args.get("os_id", type=int)
     start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query
+    if os_id:
+        query = query.filter(ExecucaoOS.os_id == os_id)
     if start_dt:
         query = query.filter(ExecucaoOS.data_hora >= start_dt)
     if end_dt:
@@ -604,6 +607,7 @@ def admin_relatorios():
         summary_auxiliares=summary_auxiliares,
         start_date=start_date,
         end_date=end_date,
+        os_id=os_id,
     )
 
 
@@ -652,9 +656,12 @@ def excluir_apontamento(apontamento_id):
 def exportar_excel():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
+    os_id = request.args.get("os_id", type=int)
     start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query
+    if os_id:
+        query = query.filter(ExecucaoOS.os_id == os_id)
     if start_dt:
         query = query.filter(ExecucaoOS.data_hora >= start_dt)
     if end_dt:
