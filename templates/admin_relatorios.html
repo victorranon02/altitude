@@ -62,6 +62,10 @@
   <input type="hidden" name="os_id" value="{{ os_id }}" />
   {% endif %}
   <label>
+    Busca
+    <input type="search" name="search" placeholder="O.S., piloto, auxiliar, operação..." value="{{ search_query or '' }}" />
+  </label>
+  <label>
     Data início
     <input type="date" name="start_date" value="{{ start_date or '' }}" />
   </label>

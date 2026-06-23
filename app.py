@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from openpyxl import Workbook, load_workbook
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, text, or_
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from io import BytesIO
@@ -75,6 +75,14 @@ def format_brasilia(value):
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+
+def format_datetime_local(value):
+    """Format datetime for HTML datetime-local input."""
+    if not value:
+        return ""
+    if value.tzinfo is not None:
+        value = value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value.strftime("%Y-%m-%dT%H:%M")
 
 # ==================================
 # MODELS
@@ -550,6 +558,7 @@ def admin_relatorios():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
     os_id = request.args.get("os_id", type=int)
+    search_query = (request.args.get("search") or "").strip()
     start_dt, end_dt = parse_date_range(start_date, end_date)
 
     query = ExecucaoOS.query
@@ -559,6 +568,21 @@ def admin_relatorios():
         query = query.filter(ExecucaoOS.data_hora >= start_dt)
     if end_dt:
         query = query.filter(ExecucaoOS.data_hora < end_dt)
+
+    if search_query:
+        term = f"%{search_query.lower()}%"
+        query = query.join(OrdemServico, ExecucaoOS.os_id == OrdemServico.id)
+        query = query.join(Piloto, ExecucaoOS.piloto_id == Piloto.id)
+        query = query.filter(or_(
+            db.func.lower(OrdemServico.os).like(term),
+            db.func.lower(OrdemServico.operacao).like(term),
+            db.func.lower(OrdemServico.fazenda).like(term),
+            db.func.lower(OrdemServico.setor).like(term),
+            db.func.lower(OrdemServico.unidade).like(term),
+            db.func.lower(Piloto.nome).like(term),
+            db.func.lower(ExecucaoOS.auxiliar).like(term),
+            db.func.lower(ExecucaoOS.observacao).like(term),
+        ))
 
     dados_raw = query.order_by(ExecucaoOS.data_hora.desc()).all()
 
@@ -608,6 +632,7 @@ def admin_relatorios():
         start_date=start_date,
         end_date=end_date,
         os_id=os_id,
+        search_query=search_query,
     )
 
 
@@ -623,22 +648,27 @@ def editar_apontamento(apontamento_id):
         auxiliar = request.form.get("auxiliar")
         area = request.form.get("area")
         observacao = request.form.get("observacao")
+        data_hora = request.form.get("data_hora")
 
-        if auxiliar and area:
+        if auxiliar and area and data_hora:
             try:
                 apontamento.auxiliar = auxiliar.strip()
                 apontamento.area = float(area)
                 apontamento.observacao = observacao or ""
+                apontamento.data_hora = datetime.strptime(data_hora, "%Y-%m-%dT%H:%M")
                 db.session.commit()
                 return redirect("/admin/relatorios")
             except (ValueError, TypeError):
                 pass
 
+    data_hora_input = format_datetime_local(apontamento.data_hora)
+
     return render_template(
         "editar_apontamento.html",
         apontamento=apontamento,
         os=os_item,
-        auxiliares=auxiliares
+        auxiliares=auxiliares,
+        data_hora_input=data_hora_input,
     )
 
 

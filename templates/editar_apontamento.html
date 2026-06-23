@@ -114,6 +114,16 @@
       </label>
 
       <label class="form-label">
+        <span>Data e hora do apontamento</span>
+        <input 
+          type="datetime-local" 
+          name="data_hora" 
+          value="{{ data_hora_input }}" 
+          required
+        />
+      </label>
+
+      <label class="form-label">
         <span>Observação</span>
         <textarea name="observacao">{{ apontamento.observacao or '' }}</textarea>
       </label>
