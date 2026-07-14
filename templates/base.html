@@ -3,27 +3,133 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>{% block title %}ALTITUDE{% endblock %}</title>
+
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<style>
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.58);
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-overlay.ativo {
+  display: flex;
+}
+
+.loading-card {
+  width: 85%;
+  max-width: 320px;
+  padding: 28px 22px;
+  border-radius: 15px;
+  background: white;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 45px;
+  height: 45px;
+  margin: 0 auto 15px;
+  border: 5px solid #dddddd;
+  border-top-color: #1967d2;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+.loading-card strong,
+.loading-card span {
+  display: block;
+}
+
+.loading-card span {
+  margin-top: 8px;
+  color: #666666;
+  font-size: 14px;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
+
 </head>
+
 <body>
+
 <div class="navbar">
   <div class="brand">ALTITUDE</div>
+
   {% if session.get('perfil') == 'ADMINISTRADOR' %}
     <a href="/admin">Admin</a>
     <a href="/admin/relatorios">Relatórios</a>
+
   {% elif session.get('perfil') == 'PILOTO' %}
     <a href="/piloto">Piloto</a>
+
   {% else %}
     <a href="/">Login</a>
   {% endif %}
+
   {% if session.get('piloto_id') %}
     <a href="/logout">Sair</a>
   {% endif %}
 </div>
+
 <div class="page content">
   {% block content %}{% endblock %}
 </div>
+
 <footer>developed by Victor Ranon</footer>
+
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <strong>Salvando informações...</strong>
+    <span>Aguarde e não feche esta página.</span>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const overlay = document.getElementById("loading-overlay");
+
+  document.querySelectorAll("form").forEach(function (formulario) {
+    formulario.addEventListener("submit", function () {
+      if (!formulario.checkValidity()) {
+        return;
+      }
+
+      const botao = formulario.querySelector(
+        'button[type="submit"], input[type="submit"]'
+      );
+
+      if (botao) {
+        botao.disabled = true;
+      }
+
+      overlay.classList.add("ativo");
+    });
+  });
+
+  window.addEventListener("pageshow", function () {
+    overlay.classList.remove("ativo");
+
+    document.querySelectorAll(
+      'button[type="submit"], input[type="submit"]'
+    ).forEach(function (botao) {
+      botao.disabled = false;
+    });
+  });
+});
+</script>
+
 </body>
 </html>
