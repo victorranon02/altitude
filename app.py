@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from io import BytesIO
 from functools import wraps
 import os
+import time
 
 app = Flask(__name__)
 
@@ -234,11 +235,13 @@ def login_page():
 @app.route("/admin", methods=["GET", "POST"])
 @require_auth("ADMINISTRADOR")
 def importar_os():
+    inicio_total = time.perf_counter()
+    print("ADMIN: início da rota", flush=True)
 
     if request.method == "POST":
         arquivo = request.files.get("arquivo")
 
-        if arquivo and arquivo.filename.endswith(".xlsx"):
+        if arquivo and arquivo.filename.lower().endswith(".xlsx"):
             caminho = os.path.join(app.config["UPLOAD_FOLDER"], arquivo.filename)
             arquivo.save(caminho)
 
@@ -260,7 +263,11 @@ def importar_os():
                     except (TypeError, ValueError):
                         area_num = 0.0
 
-                    unidade = str(row[6]).strip() if len(row) > 6 and row[6] is not None else ""
+                    unidade = (
+                        str(row[6]).strip()
+                        if len(row) > 6 and row[6] is not None
+                        else ""
+                    )
 
                     registro = OrdemServico.query.filter_by(os=os_excel).first()
 
@@ -272,38 +279,71 @@ def importar_os():
                         registro.unidade = unidade
                         registro.area_os = area_num
                     else:
-                        novo = OrdemServico(
-                            os=os_excel,
-                            operacao=str(row[1]) if len(row) > 1 else "",
-                            data_os=str(row[2]) if len(row) > 2 else "",
-                            fazenda=str(row[3]) if len(row) > 3 else "",
-                            setor=str(row[4]) if len(row) > 4 else "",
-                            unidade=unidade,
-                            area_os=area_num,
+                        db.session.add(
+                            OrdemServico(
+                                os=os_excel,
+                                operacao=str(row[1]) if len(row) > 1 else "",
+                                data_os=str(row[2]) if len(row) > 2 else "",
+                                fazenda=str(row[3]) if len(row) > 3 else "",
+                                setor=str(row[4]) if len(row) > 4 else "",
+                                unidade=unidade,
+                                area_os=area_num,
+                            )
                         )
-                        db.session.add(novo)
 
                 db.session.commit()
-            except Exception:
+            except Exception as erro:
                 db.session.rollback()
+                print(f"ADMIN: erro na importação: {erro}", flush=True)
 
+    etapa = time.perf_counter()
     todos_os = OrdemServico.query.order_by(OrdemServico.os).all()
-    
-    for os_item in todos_os:
-        os_item.total_relatado = os_item.total_area_relatada()
-        os_item.status = os_item.status_label()
-        os_item.icon = os_item.status_icon()
-    
+    print(
+        f"ADMIN: carregar O.S. = {time.perf_counter() - etapa:.3f}s "
+        f"| quantidade = {len(todos_os)}",
+        flush=True,
+    )
+
+    etapa = time.perf_counter()
+    preencher_status_os(todos_os)
+    print(
+        f"ADMIN: calcular totais/status = {time.perf_counter() - etapa:.3f}s",
+        flush=True,
+    )
+
+    etapa = time.perf_counter()
     pilotos = Piloto.query.order_by(Piloto.nome).all()
     auxiliares = Auxiliar.query.order_by(Auxiliar.nome).all()
+    print(
+        f"ADMIN: carregar pilotos/auxiliares = {time.perf_counter() - etapa:.3f}s",
+        flush=True,
+    )
 
-    return render_template(
+    antes_template = time.perf_counter()
+    print(
+        f"ADMIN: total antes do template = {antes_template - inicio_total:.3f}s",
+        flush=True,
+    )
+
+    resposta = render_template(
         "importar_os.html",
         dados_os=todos_os,
         is_admin=True,
         pilotos=pilotos,
         auxiliares=auxiliares,
     )
+
+    print(
+        f"ADMIN: renderizar template = {time.perf_counter() - antes_template:.3f}s",
+        flush=True,
+    )
+    print(
+        f"ADMIN: tempo total da rota = {time.perf_counter() - inicio_total:.3f}s",
+        flush=True,
+    )
+
+    return resposta
+
 
 @app.route("/admin/os/<int:os_id>/excluir", methods=["POST"])
 @require_auth("ADMINISTRADOR")
